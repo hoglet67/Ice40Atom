@@ -24,24 +24,34 @@
 // `define use_sb_io
 
 module atom (
+             // Main clock, 100MHz
              input         clk100,
+             // LEDs
              output        led1,
              output        led2,
              output        led3,
              output        led4,
+             // Switches
              input         sw1_1,
              input         sw1_2,
              input         sw2_1,
              input         sw2_2,
              input         sw3,
              input         sw4,
+             // External RAM
              output        RAMWE_b,
              output        RAMOE_b,
              output        RAMCS_b,
              output [17:0] ADR,
              inout [7:0]   DAT,
+             // Cassette / Sound
+             input         cas_in,
+             output        cas_out,
+             output        sound,
+             // Keyboard
              input         ps2_clk,
              input         ps2_data,
+             // Video
              output [2:0]  r,
              output [2:0]  g,
              output [1:0]  b,
@@ -55,7 +65,6 @@ module atom (
 
    reg [1:0]  clkpre = 2'b00;     // prescaler, from 100MHz to 25MHz
    reg [4:0]  clkdiv = 5'b00000;  // divider, from 25MHz down to 1MHz
-
    always @(posedge clk100)
      begin
         clkpre <= clkpre + 1;
@@ -133,11 +142,30 @@ module atom (
       );
 
    // ===============================================================
-   // Cassette -- TODO
+   // Cassette
    // ===============================================================
 
-   wire       cas_in = 1'b1;
-   wire       cas_tone = 1'b1;
+   // The Atom drives cas_tone from 4MHz / 16 / 13 / 8
+   // 208 = 16 * 13, and start with 1MHz and toggle
+   // so it's basically the same
+
+   reg        cas_tone = 1'b0;
+   reg [7:0]  cas_div = 0;
+
+   always @(posedge clk_cpu)
+     if (cas_div == 207)
+       begin
+          cas_div <= 0;
+          cas_tone = !cas_tone;
+       end
+     else
+       cas_div = cas_div + 1;
+
+   assign sound = pia_pc[2];
+
+   // this is a direct translation of the logic in the atom
+   // (two NAND gates and an inverter)
+   assign cas_out = !(!(!cas_tone & pia_pc[1]) & pia_pc[0]);
 
    // ===============================================================
    // External RAM
@@ -176,8 +204,8 @@ module atom (
    // 8255 PIA at 0xB0xx
    // ===============================================================
 
-   // TODO - this model is still very crude
-   // e.g. writing to B003 does not have the correct effect
+   // This model is still very crude, specifically the directions of
+   // the ports are fixed (not normally a problem on the Atom)
 
    reg [7:0]  pia_dout;
    reg [7:0]  pia_pa_r = 8'b00000000;
@@ -192,6 +220,7 @@ module atom (
           case (address[1:0])
             2'b00: pia_pa_r <= cpu_dout;
             2'b10: pia_pc_r <= cpu_dout[3:0];
+            2'b11: if (!cpu_dout[7]) pia_pc_r[cpu_dout[2:1]] <= cpu_dout[0];
           endcase
      end
 
