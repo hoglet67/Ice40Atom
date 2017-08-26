@@ -17,6 +17,11 @@ set_io sw2_1 41 # DIG16
 set_io sw3   63 # B1 (active low)
 set_io sw4   64 # B2 (active low)
 
+# Keyboard
+
+set_io ps2_clk  25 # P47 = PMOD 11/12 pin 6
+set_io ps2_data 26 # P46 = PMOD 11/12 pin 8
+
 # VGA Output
 set_io r[2]  10 # PMOD24 = PMOD 7/8 pin 11
 set_io r[1]   9 # PMOD25 = PMOD 7/8 pin  9

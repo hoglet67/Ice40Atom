@@ -40,6 +40,8 @@ module atom (
              output        RAMCS_b,
              output [17:0] ADR,
              inout [7:0]   DAT,
+             input         ps2_clk,
+             input         ps2_data,
              output [2:0]  r,
              output [2:0]  g,
              output [1:0]  b,
@@ -101,14 +103,30 @@ module atom (
    assign led4 = 1'b0;     // red
 
    // ===============================================================
-   // Keyboard -- TODO
+   // Keyboard
    // ===============================================================
 
-   wire rept_n = 1'b1;
-   wire shift_n = 1'b1;
-   wire ctrl_n = 1'b1;
-   wire [5:0] keyboard = 6'b11111;
+   wire rept_n;   
+   wire shift_n;
+   wire ctrl_n;
+   wire break_n;
+   wire [3:0] row = pia_pa_r[3:0];   
+   wire [5:0] keyout;
 
+   keyboard KBD
+     (
+      .CLK(clk_vga),
+      .nRESET(!reset),
+      .PS2_CLK(ps2_clk),
+      .PS2_DATA(ps2_data),
+      .KEYOUT(keyout),
+      .ROW(row),
+      .SHIFT_OUT(shift_n),
+      .CTRL_OUT(ctrl_n),
+      .REPEAT_OUT(rept_n),
+      .BREAK_OUT(break_n)
+      );
+   
    // ===============================================================
    // Cassette -- TODO
    // ===============================================================
@@ -160,7 +178,7 @@ module atom (
    reg [7:0]  pia_pa_r = 8'b00000000;
    reg [3:0]  pia_pc_r = 4'b0000;
    wire [7:0] pia_pa   = { pia_pa_r };
-   wire [7:0] pia_pb   = { shift_n, ctrl_n, keyboard };
+   wire [7:0] pia_pb   = { shift_n, ctrl_n, keyout };
    wire [7:0] pia_pc   = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
 
    always @(posedge clk_cpu)
