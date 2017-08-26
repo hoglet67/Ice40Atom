@@ -1,23 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Sat Aug 26 09:18:25 2017
+[*] Sat Aug 26 16:22:42 2017
 [*]
 [dumpfile] "/home/dmb/atom/Ice40Atom/blackice/dump.vcd"
-[dumpfile_mtime] "Sat Aug 26 09:16:06 2017"
-[dumpfile_size] 55628006
+[dumpfile_mtime] "Sat Aug 26 16:18:30 2017"
+[dumpfile_size] 299513674
 [savefile] "/home/dmb/atom/Ice40Atom/blackice/signals.gtkw"
-[timestart] 0
-[size] 1000 600
-[pos] 449 0
-*-22.000000 332500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 1028000
+[size] 1855 1176
+[pos] 65 -10
+*-12.000000 1230015 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] opc6tb.
 [treeopen] opc6tb.DUT.
+[treeopen] opc6tb.DUT.CPU.
 [sst_width] 223
 [signals_width] 134
 [sst_expanded] 1
-[sst_vpaned_height] 152
+[sst_vpaned_height] 355
 @28
-opc6tb.DUT.clk
+opc6tb.DUT.clk_cpu
 opc6tb.DUT.reset
 @22
 opc6tb.DUT.address[15:0]
@@ -25,8 +26,9 @@ opc6tb.DUT.address[15:0]
 opc6tb.DUT.rnw
 @22
 opc6tb.DUT.cpu_din[7:0]
-@23
 opc6tb.DUT.cpu_dout[7:0]
+@29
+opc6tb.DUT.clk_vga
 @28
 opc6tb.r_msb
 opc6tb.g_msb

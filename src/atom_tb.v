@@ -53,9 +53,9 @@ atom DUT (
       $dumpvars;
       clk = 0;
       reset_b = 1;
-      #102 reset_b = 0;
-      #202 reset_b = 1;
-      #30000000 $finish; // 30ms, enough for two video frames
+      #1002 reset_b = 0;
+      #5002 reset_b = 1;
+      #50000000 $finish; // 50ms, enough for a few video frames
    end
    
    always

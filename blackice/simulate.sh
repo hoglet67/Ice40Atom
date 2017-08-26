@@ -4,4 +4,4 @@ SRCS="../src/atom.v ../src/cpu.v ../src/ALU.v ../src/rom_c000_f000.v ../src/mc68
 
 iverilog ../src/atom_tb.v $SRCS
 ./a.out  
-gtkwave -a signals.gtkw dump.vcd
+gtkwave -g -a signals.gtkw dump.vcd
