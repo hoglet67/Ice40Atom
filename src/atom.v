@@ -1,4 +1,3 @@
-// `define use_pll
 // `define use_sb_io
 
 module atom (
@@ -139,62 +138,6 @@ module atom (
                     via_cs   ? via_dout :
                     8'hff;
 
-`ifdef use_pll
-   // PLL to go from 100MHz to 40MHz
-   //
-   // In PHASE_AND_DELAY_MODE:
-   //     FreqOut = FreqRef * (DIVF + 1) / (DIVR + 1)
-   //     (DIVF: 0..63)
-   //     (DIVR: 0..15)
-   //     (DIVQ: 1..6, apparantly not used in this mode)
-   //
-   // The valid PLL output range is 16 - 275 MHz.
-   // The valid PLL VCO range is 533 - 1066 MHz.
-   // The valid phase detector range is 10 - 133MHz.
-   // The valid input frequency range is 10 - 133MHz.
-   //
-   //
-   // icepll -i 100 -o 40
-   // F_PLLIN:   100.000 MHz (given)
-   // F_PLLOUT:   40.000 MHz (requested)
-   // F_PLLOUT:   40.000 MHz (achieved)
-   //
-   // FEEDBACK: SIMPLE
-   // F_PFD:   20.000 MHz
-   // F_VCO:  640.000 MHz
-   //
-   // DIVR:  4 (4'b0100)
-   // DIVF: 31 (7'b0011111)
-   // DIVQ:  4 (3'b100)
-   //
-   // FILTER_RANGE: 2 (3'b010)
-
-
-   wire         PLL_BYPASS = 0;
-   wire         PLL_RESETB = 1;
-   wire         LOCK;
-   SB_PLL40_CORE #(
-        .FEEDBACK_PATH("SIMPLE"),
-        .DELAY_ADJUSTMENT_MODE_FEEDBACK("FIXED"),
-        .DELAY_ADJUSTMENT_MODE_RELATIVE("FIXED"),
-        .PLLOUT_SELECT("GENCLK"),
-        .SHIFTREG_DIV_MODE(1'b0),
-        .FDA_FEEDBACK(4'b0000),
-        .FDA_RELATIVE(4'b0000),
-        .DIVR(4'b0100),
-        .DIVF(7'b0011111),
-        .DIVQ(3'b100),
-        .FILTER_RANGE(3'b010),
-   ) uut (
-        .REFERENCECLK   (clk100),
-        .PLLOUTGLOBAL   (clk),
-        .PLLOUTCORE     (wegate),
-        .BYPASS         (PLL_BYPASS),
-        .RESETB         (PLL_RESETB),
-        .LOCK           (LOCK)
-   );
-`else // !`ifdef use_pll
-   wire LOCK = 1'b1;
 //   reg [2:0]    clkpre = 3;b00;  // prescaler
    reg [1:0]    clkdiv = 2'b00;  // divider
    always @(posedge clk100)
@@ -211,7 +154,6 @@ module atom (
      end
    assign clk = clkdiv[1];
    assign wegate = clkdiv[0];
-`endif
 
    always @(posedge clk)
      begin
@@ -221,9 +163,9 @@ module atom (
    assign reset = !sw4_sync;
 
    assign led1 = reset;    // blue
-   assign led2 = LOCK;     // green
-   assign led3 = 0;        // yellow
-   assign led4 = 0;        // red
+   assign led2 = 1'b1;     // green
+   assign led3 = 1'b0;     // yellow
+   assign led4 = 1'b0;     // red
 
    cpu CPU
      (
