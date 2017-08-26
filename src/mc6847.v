@@ -501,11 +501,15 @@ module mc6847 (
                       else
                         // handle graphics shifting
                         if (gm_s == 3'b000)
-                          if (count[1:0] == 0)
-                            dd_r <= { dd_r[5:0], 2'b00 };  // CG1
-                          else
-                            if (count[0] == 1'b0)
-                              dd_r <= { dd_r[6:0], 1'b0 };  // RG1/RG2/RG3
+                          begin
+                             if (count[1:0] == 0)
+                               dd_r <= { dd_r[5:0], 2'b00 };  // CG1
+                          end
+                        else
+                          begin
+                             if (count[0] == 1'b0)
+                               dd_r <= { dd_r[6:0], 1'b0 };  // RG1/RG2/RG3
+                          end
                     default:  // CG2/CG3/CG6/RG6
                       if (count[2:0] == 0)
                         // handle graphics latching
