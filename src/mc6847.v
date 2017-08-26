@@ -28,9 +28,9 @@ module mc6847 (
                output reg [10:0] char_a,
                input [7:0]       char_d_o
                );
-
+   
    parameter CVBS_NOT_VGA       = 0;
-
+   
    parameter H_FRONT_PORCH      = 8;
    parameter H_HORIZ_SYNC       = H_FRONT_PORCH + 48;
    parameter H_BACK_PORCH       = H_HORIZ_SYNC + 24;
@@ -39,7 +39,7 @@ module mc6847 (
    parameter H_VIDEO            = H_LEFT_BORDER + 256;
    parameter H_RIGHT_BORDER     = H_VIDEO + 31;
    parameter H_TOTAL_PER_LINE   = H_RIGHT_BORDER;
-
+   
    parameter V2_FRONT_PORCH     = 2;
    parameter V2_VERTICAL_SYNC   = V2_FRONT_PORCH + 2;
    parameter V2_BACK_PORCH      = V2_VERTICAL_SYNC + 12;
@@ -47,89 +47,89 @@ module mc6847 (
    parameter V2_VIDEO           = V2_TOP_BORDER + 192;
    parameter V2_BOTTOM_BORDER   = V2_VIDEO + 27;  // + 25;       // +25 for PAL
    parameter V2_TOTAL_PER_FIELD = V2_BOTTOM_BORDER;
-
+   
    // internal version of control ports
-   wire                      an_g_s;
-   wire                      an_s_s;
-   wire                      intn_ext_s;
-   wire [2:0]                gm_s;
-   wire                      css_s;
-   wire                      inv_s;
-
+   wire                          an_g_s;
+   wire                          an_s_s;
+   wire                          intn_ext_s;
+   wire [2:0]                    gm_s;
+   wire                          css_s;
+   wire                          inv_s;
+   
    // VGA signals
-   reg                       vga_hsync;
-   reg                       vga_vsync;
-   reg                       vga_hblank;
-   reg                       vga_vblank;
-   reg [8:0]                 vga_linebuf_addr;
-   reg [7:0]                 vga_char_d_o;
-   reg                       vga_hborder;
-   reg                       vga_vborder;
-
+   reg                           vga_hsync;
+   reg                           vga_vsync;
+   reg                           vga_hblank;
+   reg                           vga_vblank;
+   reg [8:0]                     vga_linebuf_addr;
+   reg [7:0]                     vga_char_d_o;
+   reg                           vga_hborder;
+   reg                           vga_vborder;
+   
    // CVBS signals
-   reg                       cvbs_clk_ena;  // PAL/NTSC*2
-   reg                       cvbs_hsync;
-   reg                       cvbs_vsync;
-   reg                       cvbs_hblank;
-   reg                       cvbs_vblank;
+   reg                           cvbs_clk_ena;  // PAL/NTSC*2
+   reg                           cvbs_hsync;
+   reg                           cvbs_vsync;
+   reg                           cvbs_hblank;
+   reg                           cvbs_vblank;
    //wire                    cvbs_hborder; // unused
-   reg                       cvbs_vborder;
-   wire                      cvbs_linebuf_we;
-   reg [8:0]                 cvbs_linebuf_addr;
-
-   reg                       active_h_start = 1'b0;
-   reg                       an_s_r;
-   reg                       inv_r;
-   reg                       intn_ext_r;
-   reg [7:0]                 dd_r;
-   reg [7:0]                 pixel_char_d_o;
-   reg [7:0]                 cvbs_char_d_o;
-   wire                      hs_int = cvbs_hblank;
-   reg                       fs_int;
-   reg [4:0]                 da0_int;
-
+   reg                           cvbs_vborder;
+   wire                          cvbs_linebuf_we;
+   reg [8:0]                     cvbs_linebuf_addr;
+   
+   reg                           active_h_start = 1'b0;
+   reg                           an_s_r;
+   reg                           inv_r;
+   reg                           intn_ext_r;
+   reg [7:0]                     dd_r;
+   reg [7:0]                     pixel_char_d_o;
+   reg [7:0]                     cvbs_char_d_o;
+   wire                          hs_int = cvbs_hblank;
+   reg                           fs_int;
+   reg [4:0]                     da0_int;
+   
    // character rom signals
-   reg                       cvbs_linebuf_we_r;
-   reg [8:0]                 cvbs_linebuf_addr_r;
-   reg                       cvbs_linebuf_we_rr;
-   reg [8:0]                 cvbs_linebuf_addr_rr;
-
-   reg [5:0]                 lookup;
-   reg [7:0]                 tripletaddr;
-   reg [1:0]                 tripletcnt;
-
+   reg                           cvbs_linebuf_we_r;
+   reg [8:0]                     cvbs_linebuf_addr_r;
+   reg                           cvbs_linebuf_we_rr;
+   reg [8:0]                     cvbs_linebuf_addr_rr;
+   
+   reg [5:0]                     lookup;
+   reg [7:0]                     tripletaddr;
+   reg [1:0]                     tripletcnt;
+   
    // *******************************************************8
-
+   
    // TODO: Initialize with 0xFF
-   reg [7:0]                 VRAM [0:511];
-
+   reg [7:0]                     VRAM [0:511];
+   
    // *******************************************************8
-
+   
    // used by both CVBS and VGA
-   reg [8:0]                 v_count;
-   reg [3:0]                 row_v;
-
-
+   reg [8:0]                     v_count;
+   reg [3:0]                     row_v;
+   
+   
    function [11:0] map_palette;
-      input [7:0]            vga_char_d_o;
+      input [7:0]                vga_char_d_o;
       // parts of input
-      reg                    css_v;
-      reg                    an_g_v;
-      reg                    an_s_v;
-      reg                    luma;
-      reg [2:0]              chroma;
+      reg                        css_v;
+      reg                        an_g_v;
+      reg                        an_s_v;
+      reg                        luma;
+      reg [2:0]                  chroma;
       // parts of output
-      reg [1:0]              r;
-      reg [1:0]              g;
-      reg [1:0]              b;
-
+      reg [1:0]                  r;
+      reg [1:0]                  g;
+      reg [1:0]                  b;
+      
       begin
          css_v  = vga_char_d_o[6];
          an_g_v = vga_char_d_o[5];
          an_s_v = vga_char_d_o[4];
          luma   = vga_char_d_o[3];
          chroma = vga_char_d_o[2:0];
-
+         
          if (luma)
            begin
               case (chroma)
@@ -162,7 +162,7 @@ module mc6847 (
          map_palette = { r, 2'b0, g, 2'b0, b, 2'b0};
       end
    endfunction
-
+   
    // assign control inputs for debug/release build
    assign an_g_s     = an_g;
    assign an_s_s     = an_s;
@@ -170,7 +170,7 @@ module mc6847 (
    assign gm_s       = gm;
    assign css_s      = css;
    assign inv_s      = inv;
-
+   
    // generate the clocks
    reg toggle;
    always @(posedge clk, posedge reset)
@@ -190,14 +190,14 @@ module mc6847 (
                end
           end
      end
-
+   
    // generate horizontal timing for VGA
    // generate line buffer address for reading VGA char_d_o
-
+   
    reg [8:0] vga_h_count;
    reg [7:0] vga_active_h_count;
    reg       vga_vblank_r;
-
+   
    always @(posedge clk, posedge reset)
      begin
         if (reset)
@@ -225,7 +225,7 @@ module mc6847 (
                     begin
                        vga_h_count = vga_h_count + 1;
                     end
-
+                  
                   if (vga_h_count == H_FRONT_PORCH)
                     vga_hsync <= 1'b0;
                   else if (vga_h_count == H_HORIZ_SYNC)
@@ -238,30 +238,30 @@ module mc6847 (
                     vga_hblank <= 1'b1;
                   else if (vga_h_count == H_RIGHT_BORDER)
                     vga_hborder <= 1'b0;
-
+                  
                   if (vga_h_count == H_LEFT_BORDER)
                     vga_active_h_count = 8'b11111111;
                   else
                     vga_active_h_count = vga_active_h_count + 1;
                end
-
-            // vertical syncs, blanks are the same
-            vga_vsync        <= cvbs_vsync;
-            // generate linebuffer address
-            // - alternate every 2nd line
-            vga_linebuf_addr <= {!v_count[0], vga_active_h_count};
-            vga_vblank_r     = vga_vblank;
+             
+             // vertical syncs, blanks are the same
+             vga_vsync        <= cvbs_vsync;
+             // generate linebuffer address
+             // - alternate every 2nd line
+             vga_linebuf_addr <= {!v_count[0], vga_active_h_count};
+             vga_vblank_r     = vga_vblank;
           end
      end
-
-    // generate horizontal timing for CVBS
-    // generate line buffer address for writing CVBS char_d_o
-
+   
+   // generate horizontal timing for CVBS
+   // generate line buffer address for writing CVBS char_d_o
+   
    reg [8:0] h_count;
    reg [7:0] active_h_count;
    reg       cvbs_hblank_r;
    reg [12:0] videoaddr_base;
-
+   
    always @(posedge clk, posedge reset)
      begin
         if (reset)
@@ -290,11 +290,11 @@ module mc6847 (
                     v_count = 0;
                   else
                     v_count = v_count + 1;
-
+                  
                   // VGA vblank is 1 line behind CVBS
                   // - because we need to fill the line buffer
                   vga_vblank <= cvbs_vblank;
-
+                  
                   if (v_count == V2_FRONT_PORCH)
                     begin
                        cvbs_vsync <= 1'b0;
@@ -371,7 +371,7 @@ module mc6847 (
              else
                begin
                   h_count = h_count + 1;
-
+                  
                   if (h_count == H_FRONT_PORCH)
                     cvbs_hsync <= 1'b0;
                   else if (h_count == H_HORIZ_SYNC)
@@ -395,10 +395,10 @@ module mc6847 (
                   else
                     active_h_count = active_h_count + 1;
                end
-
+             
              // generate character rom address
              char_a <= { dd[6:0], row_v[3:0] };
-
+             
              // DA0 high during FS
              if (cvbs_vblank == 1'b1)
                da0_int <= 5'b11111;
@@ -408,8 +408,8 @@ module mc6847 (
                da0_int <= 5'b01000;
              else
                da0_int <= da0_int + 1;
-
-
+             
+             
              cvbs_linebuf_addr    <= { v_count[0], active_h_count };
              // pipeline writes to linebuf because char_d_o is delayed 1 clock as well!
              cvbs_linebuf_we_r    <= cvbs_linebuf_we;
@@ -417,7 +417,7 @@ module mc6847 (
              cvbs_linebuf_we_rr   <= cvbs_linebuf_we_r;
              cvbs_linebuf_addr_rr <= cvbs_linebuf_addr_r;
              cvbs_hblank_r        = cvbs_hblank;
-
+             
              if (an_g_s == 1'b0)
                begin
                   lookup[4:0] <= active_h_count[7:3] + 1;
@@ -440,14 +440,14 @@ module mc6847 (
                end // else: !if(an_g_s == 1'b0)
           end // if (cvbs_clk_ena)
      end // always @ (posedge clk, posedge reset)
-
+   
    // handle latching & shifting of character, graphics char_d_o
    reg[3:0] count;
    always @(posedge clk, posedge reset)
      begin
         if (reset)
           begin
-            count = 0;
+             count = 0;
           end
         else if (cvbs_clk_ena)
           begin
@@ -464,19 +464,19 @@ module mc6847 (
                     if (an_s_s == 1'b0)
                       dd_r <= char_d_o;                  // alpha mode
                     else
-                        // store luma,chroma(2..0),luma,chroma(2..0)
-                        if (intn_ext_s == 1'b0)           // semi-4
-                            if (row_v < 6)
-                              dd_r <= { dd[3], dd[6], dd[5], dd[4], dd[2], dd[6], dd[5], dd[4] };
-                            else
-                              dd_r <= { dd[1], dd[6], dd[5], dd[4], dd[0], dd[6], dd[5], dd[4] };
-                        else            // semi-6
-                          if (row_v < 4)
-                            dd_r <= { dd[5], css_s, dd[7], dd[6], dd[4], css_s, dd[7], dd[6] };
-                          else if (row_v < 8)
-                            dd_r <= { dd[3], css_s, dd[7], dd[6], dd[2], css_s, dd[7], dd[6] };
-                          else
-                            dd_r <= { dd[1], css_s, dd[7], dd[6], dd[0], css_s, dd[7], dd[6] };
+                      // store luma,chroma(2..0),luma,chroma(2..0)
+                      if (intn_ext_s == 1'b0)           // semi-4
+                        if (row_v < 6)
+                          dd_r <= { dd[3], dd[6], dd[5], dd[4], dd[2], dd[6], dd[5], dd[4] };
+                        else
+                          dd_r <= { dd[1], dd[6], dd[5], dd[4], dd[0], dd[6], dd[5], dd[4] };
+                      else            // semi-6
+                        if (row_v < 4)
+                          dd_r <= { dd[5], css_s, dd[7], dd[6], dd[4], css_s, dd[7], dd[6] };
+                        else if (row_v < 8)
+                          dd_r <= { dd[3], css_s, dd[7], dd[6], dd[2], css_s, dd[7], dd[6] };
+                        else
+                          dd_r <= { dd[1], css_s, dd[7], dd[6], dd[0], css_s, dd[7], dd[6] };
                  end
                else
                  begin
@@ -522,7 +522,7 @@ module mc6847 (
              count = count + 1;
           end
      end
-
+   
    // generate pixel char_d_o
    reg luma;
    reg [2:0] chroma;
@@ -580,36 +580,36 @@ module mc6847 (
                       end
                   endcase
                end  // alpha/graphics mode
-
+             
              // pack source char_d_o into line buffer
              // - palette lookup on output
-            pixel_char_d_o <= { 1'b0, css_s, an_g_s, an_s_r, luma, chroma };
-
+             pixel_char_d_o <= { 1'b0, css_s, an_g_s, an_s_r, luma, chroma };
+             
           end
      end
-
-    // only write to the linebuffer during active display
+   
+   // only write to the linebuffer during active display
    assign cvbs_linebuf_we = !(cvbs_vblank | cvbs_hblank);
-
+   
    assign cvbs = cvbs_vblank ? {1'b0, cvbs_vsync, 6'b000000} :
                  cvbs_hblank ? {1'b0, cvbs_hsync, 6'b000000} :
                  cvbs_char_d_o;
-
+   
    // assign outputs
-
+   
    assign hs_n = !hs_int;
    assign fs_n = !fs_int;
    assign da0  = (gm_s == 3'b001 || gm_s == 3'b011 || gm_s == 3'b101) ? da0_int[4] : da0_int[3];
-
-    // map the palette to the pixel char_d_o
-    // -  we do that at the output so we can use a
-    //    higher colour-resolution palette
-    //    without using memory in the line buffer
+   
+   // map the palette to the pixel char_d_o
+   // -  we do that at the output so we can use a
+   //    higher colour-resolution palette
+   //    without using memory in the line buffer
    // for artifacting testing only
    reg [7:0] p_in;
    reg [7:0] p_out;
    reg       cnt;
-
+   
    always @(posedge clk, posedge reset)
      begin
         if (reset)
@@ -670,7 +670,7 @@ module mc6847 (
                          {red, green, blue} <= 0;
                     end // if (clk_ena)
                end // else: !if(CVBS_NOT_VGA)
-
+             
              if (CVBS_NOT_VGA)
                begin
                   hsync  <= cvbs_hsync;
@@ -687,16 +687,16 @@ module mc6847 (
                end // else: !if(CVBS_NOT_VGA)
           end // else: !if(CVBS_NOT_VGA)
      end // always @ (posedge clk, posedge reset)
-
-
-// line buffer for scan doubler gives us vga monitor compatible output
+   
+   
+   // line buffer for scan doubler gives us vga monitor compatible output
    always @(posedge clk)
-       begin
-          if (cvbs_clk_ena)
-            if (cvbs_linebuf_we_rr == 1'b1)
-              VRAM[cvbs_linebuf_addr_rr] <= pixel_char_d_o;
-          if (clk_ena)
-            vga_char_d_o <= VRAM[vga_linebuf_addr];
-       end
-
+     begin
+        if (cvbs_clk_ena)
+          if (cvbs_linebuf_we_rr == 1'b1)
+            VRAM[cvbs_linebuf_addr_rr] <= pixel_char_d_o;
+        if (clk_ena)
+          vga_char_d_o <= VRAM[vga_linebuf_addr];
+     end
+   
 endmodule
