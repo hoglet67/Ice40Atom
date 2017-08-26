@@ -51,24 +51,23 @@ module atom (
    // CPU Clock generation
    // ===============================================================
 
-   reg [1:0]               clkpre = 2'b00;  // prescaler, from 100MHz to 25MHz
-   reg [1:0]               clkdiv = 2'b00;  // divider, from 25MHz down to 6.25MHz
+   reg [1:0]  clkpre = 2'b00;     // prescaler, from 100MHz to 25MHz
+   reg [4:0]  clkdiv = 5'b00000;  // divider, from 25MHz down to 1MHz
 
    always @(posedge clk100)
      begin
         clkpre <= clkpre + 1;
-        if (clkpre == 'b0) begin
-           case (clkdiv)
-             2'b11: clkdiv <= 2'b10;  // rising edge of clk
-             2'b10: clkdiv <= 2'b00;  // wegate low
-             2'b00: clkdiv <= 2'b01;  // wegate low
-             2'b01: clkdiv <= 2'b11;
-           endcase
-        end
+        if (clkpre == 'b0)
+          if (clkdiv == 24)
+            clkdiv = 0;
+          else
+            clkdiv = clkdiv + 1;
      end
 
-   wire clk_cpu = clkdiv[1];
-   wire wegate = clkdiv[0];
+   wire clk_cpu = clkdiv[4];
+
+   // It's pretty arbitrary when in the cycle the write actually happens
+   wire wegate = (clkdiv == 0);
 
    // ===============================================================
    // VGA Clock generation
