@@ -539,18 +539,20 @@ module mc6847 (
                   // alphanumeric & semi-graphics mode
                   luma = dd_r[7];
                   if (an_s_r == 1'b0)
-                    // alphanumeric
-                    if (intn_ext_r == 1'b0)
-                      begin
-                         // internal rom
-                         chroma = { css_s, css_s, css_s};
-                         if (inv_r == 1'b1)
-                           luma = !luma;
-                         // else
-                         // external ROM?!?
-                      end
-                    else
-                      chroma = dd_r[6:4];
+                    begin
+                       // alphanumeric
+                       if (intn_ext_r == 1'b0)
+                         begin
+                            // internal rom
+                            chroma = { css_s, css_s, css_s};
+                            if (inv_r == 1'b1)
+                              luma = !luma;
+                            // else
+                            // external ROM?!?
+                         end
+                    end
+                  else
+                    chroma = dd_r[6:4];
                end  // alphanumeric/semi-graphics
              else
                begin
@@ -689,12 +691,12 @@ module mc6847 (
 
 // line buffer for scan doubler gives us vga monitor compatible output
    always @(posedge clk)
-//     if (cvbs_clk_ena) // FIX ME WHY DOES THIS NEED TO BE COMMENTED OUT??
        begin
-          if (cvbs_linebuf_we_rr == 1'b1)
-            VRAM[cvbs_linebuf_addr_rr] <= pixel_char_d_o;
+          if (cvbs_clk_ena)
+            if (cvbs_linebuf_we_rr == 1'b1)
+              VRAM[cvbs_linebuf_addr_rr] <= pixel_char_d_o;
           if (clk_ena)
             vga_char_d_o <= VRAM[vga_linebuf_addr];
        end
 
-endmodule // mc6847
+endmodule
