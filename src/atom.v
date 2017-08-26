@@ -89,7 +89,7 @@ module atom (
            .D_IN_0(data_pins_in)
    );
 `else
-   assign DAT = (rnw | wegate) ? 'bz : cpu_dout;   
+   assign DAT = (rnw | wegate) ? 8'bz : cpu_dout;
    wire [7:0]   data_pins_in = DAT;
 `endif
 
