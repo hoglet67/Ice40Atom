@@ -85,13 +85,18 @@ module atom (
    // Reset generation
    // ===============================================================
 
-   // TODO - add power up reset generation
+   reg [9:0] pwr_up_reset_counter = 0; // hold reset low for ~1ms
+   wire      pwr_up_reset_n = &pwr_up_reset_counter;
+   reg       hard_reset_n;
 
-   reg  reset;
    always @(posedge clk_cpu)
      begin
-        reset <= !sw4;
+        if (!pwr_up_reset_n)
+          pwr_up_reset_counter <= pwr_up_reset_counter + 1;
+        hard_reset_n <= sw4 & pwr_up_reset_n;
      end
+
+   wire reset = !hard_reset_n | !break_n;
 
    // ===============================================================
    // LEDs
@@ -106,17 +111,17 @@ module atom (
    // Keyboard
    // ===============================================================
 
-   wire rept_n;   
+   wire rept_n;
    wire shift_n;
    wire ctrl_n;
    wire break_n;
-   wire [3:0] row = pia_pa_r[3:0];   
+   wire [3:0] row = pia_pa_r[3:0];
    wire [5:0] keyout;
 
    keyboard KBD
      (
       .CLK(clk_vga),
-      .nRESET(!reset),
+      .nRESET(hard_reset_n),
       .PS2_CLK(ps2_clk),
       .PS2_DATA(ps2_data),
       .KEYOUT(keyout),
@@ -126,7 +131,7 @@ module atom (
       .REPEAT_OUT(rept_n),
       .BREAK_OUT(break_n)
       );
-   
+
    // ===============================================================
    // Cassette -- TODO
    // ===============================================================
@@ -271,8 +276,12 @@ module atom (
    // Dual Port Video RAM
    // ===============================================================
 
+   // Port A to CPU
    wire [7:0]  vid_dout;
    wire        we_a = vid_cs & !rnw;
+   // Port B to VDG
+   wire [12:0] vid_addr;
+   wire [7:0]  vid_data;
 
    vid_ram VID_RAM
      (
@@ -292,8 +301,6 @@ module atom (
    // 6847 VDG
    // ===============================================================
 
-   wire [12:0] vid_addr;
-   wire [7:0]  vid_data;
    wire        fs_n;
    wire        an_g     = pia_pa[4];
    wire [2:0]  gm       = pia_pa[7:5];
