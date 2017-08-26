@@ -1,114 +1,170 @@
+// =======================================================================
+// Ice40Atom
+//
+// An Acorn Atom implementation for the Ice40
+//
+// Copyright (C) 2017 David Banks
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see http://www.gnu.org/licenses/.
+// =======================================================================
+
+// The IceStorm sythesis scripts defines use_sb_io to force
+// the instantaion of SB_IO (as inferrence broken)
 // `define use_sb_io
 
 module atom (
-               input         clk100,
-               output        led1,
-               output        led2,
-               output        led3,
-               output        led4,
-               input         sw1_1,
-               input         sw1_2,
-               input         sw2_1,
-               input         sw2_2,
-               input         sw3,
-               input         sw4,
-               output        RAMWE_b,
-               output        RAMOE_b,
-               output        RAMCS_b,
-               output [17:0] ADR,
-               inout [7:0]   DAT,
-               output [2:0]  r,
-               output [2:0]  g,
-               output [1:0]  b,
-               output        hsync,
-               output        vsync
-);
+             input         clk100,
+             output        led1,
+             output        led2,
+             output        led3,
+             output        led4,
+             input         sw1_1,
+             input         sw1_2,
+             input         sw2_1,
+             input         sw2_2,
+             input         sw3,
+             input         sw4,
+             output        RAMWE_b,
+             output        RAMOE_b,
+             output        RAMCS_b,
+             output [17:0] ADR,
+             inout [7:0]   DAT,
+             output [2:0]  r,
+             output [2:0]  g,
+             output [1:0]  b,
+             output        hsync,
+             output        vsync
+             );
 
-   // CLKSPEED is the main clock speed
-   parameter CLKSPEED = 25000000;
+   // ===============================================================
+   // CPU Clock generation
+   // ===============================================================
 
-   // CPU signals
-   wire        clk;
-   wire [7:0]  cpu_din;
-   reg [7:0]   cpu_dout;
-   reg [15:0]  address;
-   reg         rnw;
-   wire [15:0] address_c;
-   wire [7:0]  cpu_dout_c;
-   wire        rnw_c;
+   reg [1:0]               clkpre = 2'b00;  // prescaler, from 100MHz to 25MHz
+   reg [1:0]               clkdiv = 2'b00;  // divider, from 25MHz down to 6.25MHz
 
-   reg         sw4_sync;
-   wire        reset;
+   always @(posedge clk100)
+     begin
+        clkpre <= clkpre + 1;
+        if (clkpre == 'b0) begin
+           case (clkdiv)
+             2'b11: clkdiv <= 2'b10;  // rising edge of clk
+             2'b10: clkdiv <= 2'b00;  // wegate low
+             2'b00: clkdiv <= 2'b01;  // wegate low
+             2'b01: clkdiv <= 2'b11;
+           endcase
+        end
+     end
 
-   wire        rom_cs = (address[15:12] == 4'b1100 || address[15:12] == 4'b1111);
-   wire        pia_cs = (address[15:10] == 6'b101100);
-   wire        via_cs = (address[15:10] == 6'b101110);
-   wire        ram_cs = (address[15]    == 1'b0);
-   wire        vid_cs = (address[15:12] == 4'b1000);
+   wire clk_cpu = clkdiv[1];
+   wire wegate = clkdiv[0];
 
+   // ===============================================================
+   // VGA Clock generation
+   // ===============================================================
 
-//   wire        page0_cs = (address[15:9] == 7'b0000000);
-//   wire [7:0]  page0_dout;
+   wire clk_vga = clkpre[1];
+   reg  clk_vga_en = 0;
 
-   
-   wire [7:0]  vid_dout;
-   wire [7:0]  rom_dout;
-   wire [7:0]  via_dout = 8'hB1;
-   reg  [7:0]  pia_dout;
+   always @(posedge clk_vga)
+     clk_vga_en <= !clk_vga_en;
 
-   wire [3:0] red;
-   wire [3:0] green;
-   wire [3:0] blue;
+   // ===============================================================
+   // Reset generation
+   // ===============================================================
 
-   assign r = red[3:1];
-   assign g = green[3:1];
-   assign b = blue[3:2];
+   // TODO - add power up reset generation
 
+   reg  reset;
+   always @(posedge clk_cpu)
+     begin
+        reset <= !sw4;
+     end
 
+   // ===============================================================
+   // LEDs
+   // ===============================================================
 
-   // External RAM signals
-   wire         wegate;
+   assign led1 = reset;    // blue
+   assign led2 = 1'b1;     // green
+   assign led3 = 1'b0;     // yellow
+   assign led4 = 1'b0;     // red
+
+   // ===============================================================
+   // Keyboard -- TODO
+   // ===============================================================
+
+   wire rept_n = 1'b1;
+   wire shift_n = 1'b1;
+   wire ctrl_n = 1'b1;
+   wire [5:0] keyboard = 6'b11111;
+
+   // ===============================================================
+   // Cassette -- TODO
+   // ===============================================================
+
+   wire       cas_in = 1'b1;
+   wire       cas_tone = 1'b1;
+
+   // ===============================================================
+   // External RAM
+   // ===============================================================
+
    assign RAMCS_b = 1'b0;
    assign RAMOE_b = !rnw;
    assign RAMWE_b = rnw  | wegate;
    assign ADR = { 2'b00, address };
 
-
-`ifdef use_sb_io   
-   // So instead we must instantiate a SB_IO block
-   wire [7:0]   data_pins_in;
-   wire [7:0]   data_pins_out = cpu_dout;
-   wire         data_pins_out_en = !(rnw | wegate); // Added wegate to avoid bus conflicts
+`ifdef use_sb_io
+   // IceStorm cannot infer bidirectional I/Os
+   wire [7:0] data_pins_in;
+   wire [7:0] data_pins_out = cpu_dout;
+   wire       data_pins_out_en = !(rnw | wegate); // Added wegate to avoid bus conflicts
    SB_IO #(
            .PIN_TYPE(6'b 1010_01)
            ) sram_data_pins [7:0] (
-           .PACKAGE_PIN(DAT),
-           .OUTPUT_ENABLE(data_pins_out_en),
-           .D_OUT_0(data_pins_out),
-           .D_IN_0(data_pins_in)
-   );
+                                   .PACKAGE_PIN(DAT),
+                                   .OUTPUT_ENABLE(data_pins_out_en),
+                                   .D_OUT_0(data_pins_out),
+                                   .D_IN_0(data_pins_in)
+                                   );
 `else
    assign DAT = (rnw | wegate) ? 8'bz : cpu_dout;
-   wire [7:0]   data_pins_in = DAT;
+   wire [7:0] data_pins_in = DAT;
 `endif
 
-   // PIA PA is an output port
-   // PIA PB is an input port
-   // PIA PC is an input / output port
-   reg [7:0]  pia_pa_r;
-   reg [3:0]  pia_pc_r = 4'b0;
-   wire       rept_n = 1'b1;
-   wire       shift_n = 1'b1;
-   wire       ctrl_n = 1'b1;
-   wire       cas_in = 1'b1;
-   wire       cas_tone = 1'b1;
-   wire [5:0] keyboard = 6'b11111;
+   // ===============================================================
+   // 6522 VIA at 0xB8xx - TODO
+   // ===============================================================
 
-   wire [7:0] pia_pa = { pia_pa_r };
-   wire [7:0] pia_pb = { shift_n, ctrl_n, keyboard };
-   wire [7:0] pia_pc = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
+   wire [7:0] via_dout = 8'hB1;
 
-   always @(posedge clk)
+   // ===============================================================
+   // 8255 PIA at 0xB0xx
+   // ===============================================================
+
+   // TODO - this model is still very crude
+   // e.g. writing to B003 does not have the correct effect
+
+   reg [7:0]  pia_dout;
+   reg [7:0]  pia_pa_r = 8'b00000000;
+   reg [3:0]  pia_pc_r = 4'b0000;
+   wire [7:0] pia_pa   = { pia_pa_r };
+   wire [7:0] pia_pb   = { shift_n, ctrl_n, keyboard };
+   wire [7:0] pia_pc   = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
+
+   always @(posedge clk_cpu)
      begin
         if (pia_cs && !rnw)
           case (address[1:0])
@@ -117,7 +173,7 @@ module atom (
           endcase
      end
 
-   always @(address, pia_pa, pia_pb, pia_pc)
+   always @(*)
      begin
         case(address[1:0])
           2'b00: pia_dout <= pia_pa;
@@ -128,48 +184,23 @@ module atom (
         endcase
      end
 
-   // Data Multiplexor
-   // page0_cs ? page0_dout :
 
-   assign cpu_din = ram_cs   ? data_pins_in :
-                    vid_cs   ? vid_dout :
-                    rom_cs   ? rom_dout :
-                    pia_cs   ? pia_dout :
-                    via_cs   ? via_dout :
-                    8'hff;
+   // ===============================================================
+   // 6502 CPU
+   // ===============================================================
 
-//   reg [2:0]    clkpre = 3;b00;  // prescaler
-   reg [1:0]    clkdiv = 2'b00;  // divider
-   always @(posedge clk100)
-     begin
-//        clkpre <= clkpre + 1;
-//        if (clkpre == 'b0) begin
-           case (clkdiv)
-             2'b11: clkdiv <= 2'b10;  // rising edge of clk
-             2'b10: clkdiv <= 2'b00;  // wegate low
-             2'b00: clkdiv <= 2'b01;  // wegate low
-             2'b01: clkdiv <= 2'b11;
-           endcase
-//        end
-     end
-   assign clk = clkdiv[1];
-   assign wegate = clkdiv[0];
+   wire  [7:0] cpu_din;
+   wire [7:0]  cpu_dout_c;
+   reg [7:0]   cpu_dout;
+   wire [15:0] address_c;
+   reg [15:0]  address;
+   reg         rnw;
+   wire        rnw_c;
 
-   always @(posedge clk)
-     begin
-        sw4_sync <= sw4;
-     end
-
-   assign reset = !sw4_sync;
-
-   assign led1 = reset;    // blue
-   assign led2 = 1'b1;     // green
-   assign led3 = 1'b0;     // yellow
-   assign led4 = 1'b0;     // red
-
+   // Arlet's 6502 core is one of the smallest available
    cpu CPU
      (
-      .clk(clk),
+      .clk(clk_cpu),
       .reset(reset),
       .AB(address_c),
       .DI(cpu_din),
@@ -179,67 +210,57 @@ module atom (
       .NMI(1'b0),
       .RDY(1'b1)
       );
-   always @(posedge clk)
+
+   // The outputs of Arlets's 6502 core need registing
+   always @(posedge clk_cpu)
      begin
         address  <= address_c;
         cpu_dout <= cpu_dout_c;
         rnw      <= !rnw_c;
      end
 
+   // ===============================================================
+   // Address decoding logic and data in multiplexor
+   // ===============================================================
 
-   // A block RAM - clocked off negative edge to mask output register
+   wire        rom_cs = (address[15:12] == 4'b1100 || address[15:12] == 4'b1111);
+   wire        pia_cs = (address[15:10] == 6'b101100);
+   wire        via_cs = (address[15:10] == 6'b101110);
+   wire        ram_cs = (address[15]    == 1'b0);
+   wire        vid_cs = (address[15:12] == 4'b1000);
+
+   assign cpu_din = ram_cs   ? data_pins_in :
+                    vid_cs   ? vid_dout :
+                    rom_cs   ? rom_dout :
+                    pia_cs   ? pia_dout :
+                    via_cs   ? via_dout :
+                    address[15:8] & 8'hF1; // this is what is normally seen for
+   // unused address space in the atom due
+   // to data bus capacitance and pull downs
+
+   // ===============================================================
+   // BASIC and MOS ROM
+   // ===============================================================
+
+   wire [7:0]  rom_dout;
    rom_c000_f000 ROM
      (
-      .clk(clk),
-      .address(address_c[12:0]),
+      .clk(clk_cpu),
+      .address(address_c[12:0]), // fed directly from CPU to mask BRAM register
       .dout(rom_dout)
       );
 
+   // ===============================================================
+   // Dual Port Video RAM
+   // ===============================================================
 
-   // Page zero RAM
-//   ram_1024_8 RAM
-//     (
-//      .din(cpu_dout),
-//      .dout(page0_dout),
-//      .address(address[9:0]),
-//      .rnw(rnw),
-//      .clk(!clk),
-//      .cs(page0_cs)
-//      );
-
-   wire        clk_vga = clk;
-   reg         clk_vga_en = 0;
-   wire [12:0] vid_addr;
-   wire [7:0]  vid_data;
-   wire        hs_n;
-   wire        fs_n;
-
-   // 6847 mode selectyion
-   wire        an_g     = pia_pa[4];
-   wire [2:0]  gm       = pia_pa[7:5];   
-   wire        css      = pia_pc[3];
-   wire        inv      = vid_data[7];
-   wire        intn_ext = vid_data[6];
-   wire        an_s     = vid_data[6];
-   wire [10:0] char_a;
-   wire [7:0]  char_d;
-
-   always @(posedge clk)
-     clk_vga_en <= !clk_vga_en;
-
-   charrom CHARROM
-     (
-      .clk(clk_vga),
-      .address(char_a),
-      .dout(char_d)
-      );
-
+   wire [7:0]  vid_dout;
    wire        we_a = vid_cs & !rnw;
 
    vid_ram VID_RAM
      (
       // Port A
-      .clk_a(!clk),    // Clock of negative edge to mask register latency
+      .clk_a(!clk_cpu),    // Clock of negative edge to mask register latency
       .we_a(we_a),
       .addr_a(address[10:0]),
       .din_a(cpu_dout),
@@ -250,7 +271,30 @@ module atom (
       .dout_b(vid_data)
       );
 
-   mc6847 CTRC
+   // ===============================================================
+   // 6847 VDG
+   // ===============================================================
+
+   wire [12:0] vid_addr;
+   wire [7:0]  vid_data;
+   wire        fs_n;
+   wire        an_g     = pia_pa[4];
+   wire [2:0]  gm       = pia_pa[7:5];
+   wire        css      = pia_pc[3];
+   wire        inv      = vid_data[7]; // See Atom schematic
+   wire        intn_ext = vid_data[6]; // See Atom schematic
+   wire        an_s     = vid_data[6]; // See Atom schematic
+   wire [10:0] char_a;
+   wire [7:0]  char_d;
+   wire [3:0]  red;
+   wire [3:0]  green;
+   wire [3:0]  blue;
+
+   assign r = red[3:1];
+   assign g = green[3:1];
+   assign b = blue[3:2];
+
+   mc6847 VDG
      (
       .clk(clk_vga),
       .clk_ena(clk_vga_en),
@@ -258,7 +302,7 @@ module atom (
       .da0(),
       .videoaddr(vid_addr),
       .dd(vid_data),
-      .hs_n(hs_n),
+      .hs_n(),
       .fs_n(fs_n),
       .an_g(an_g),
       .an_s(an_s),
@@ -280,6 +324,13 @@ module atom (
       .black_backgnd(1'b0),
       .char_a(char_a),
       .char_d_o(char_d)
+      );
+
+   charrom CHARROM
+     (
+      .clk(clk_vga),
+      .address(char_a),
+      .dout(char_d)
       );
 
 endmodule
