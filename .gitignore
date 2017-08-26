@@ -1,0 +1,11 @@
+*~
+#*
+not_in_git/
+# IceStorm files
+atom.bin
+atom.blif
+atom.log
+atom.txt
+# Simulation files
+dump.vcd
+a.out
