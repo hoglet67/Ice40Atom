@@ -110,7 +110,7 @@ module mc6847 (
    reg [3:0]                 row_v;
 
 
-   function [11:0] map_pallette;
+   function [11:0] map_palette;
       input [7:0]            vga_char_d_o;
       // parts of input
       reg                    css_v;
@@ -159,7 +159,7 @@ module mc6847 (
                 end
               b = 2'b00;
            end
-         map_pallette = { r, 2'b0, g, 2'b0, b, 2'b0};
+         map_palette = { r, 2'b0, g, 2'b0, b, 2'b0};
       end
    endfunction
 
@@ -623,7 +623,7 @@ module mc6847 (
                   if (cvbs_clk_ena)
                     begin
                        if (cvbs_hblank == 1'b0 && cvbs_vblank == 1'b0)
-                         {red, green, blue} <= map_pallette (vga_char_d_o);
+                         {red, green, blue} <= map_palette (vga_char_d_o);
                        else
                          {red, green, blue} <= 0;
                     end
@@ -656,16 +656,16 @@ module mc6847 (
                                         p_out[3:0] <= 4'b1010;  // blue
                                       //p_out[3:0] <= 4'b1111;  // orange
                                    end // if (cnt != 0)
-                                 {red, green, blue} <= map_pallette (p_out);
+                                 {red, green, blue} <= map_palette (p_out);
                                  p_in <= vga_char_d_o;
                               end
                             else
-                              {red, green, blue} <= map_pallette (vga_char_d_o);
+                              {red, green, blue} <= map_palette (vga_char_d_o);
                             cnt <= !cnt;
                          end
                        else if (an_g_s == 1'b1 && vga_hborder == 1'b1 && cvbs_vborder == 1'b1)
                          // graphics mode, either green or buff (white)
-                         {red, green, blue} <= map_pallette ({5'b00001, css_s, 2'b00});
+                         {red, green, blue} <= map_palette ({5'b00001, css_s, 2'b00});
                        else
                          {red, green, blue} <= 0;
                     end // if (clk_ena)
