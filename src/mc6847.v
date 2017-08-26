@@ -202,7 +202,7 @@ module mc6847 (
      begin
         if (reset)
           begin
-             vga_h_count    <= 0;
+             vga_h_count    = 0;
              vga_hsync  <= 1'b1;
              vga_vsync  <= 1'b1;
              vga_hblank <= 1'b0;
@@ -212,18 +212,18 @@ module mc6847 (
              // start hsync when cvbs comes out of vblank
              if (vga_vblank_r == 1'b1 && vga_vblank == 1'b0)
                begin
-                  vga_h_count <= 0;
+                  vga_h_count = 0;
                end
              else
                begin
                   if (vga_h_count == H_TOTAL_PER_LINE)
                     begin
-                       vga_h_count <= 0;
+                       vga_h_count = 0;
                        vga_hborder <= 1'b0;
                     end
                   else
                     begin
-                       vga_h_count <= vga_h_count + 1;
+                       vga_h_count = vga_h_count + 1;
                     end
 
                   if (vga_h_count == H_FRONT_PORCH)
@@ -240,9 +240,9 @@ module mc6847 (
                     vga_hborder <= 1'b0;
 
                   if (vga_h_count == H_LEFT_BORDER)
-                    vga_active_h_count <= 8'b11111111;
+                    vga_active_h_count = 8'b11111111;
                   else
-                    vga_active_h_count <= vga_active_h_count + 1;
+                    vga_active_h_count = vga_active_h_count + 1;
                end
 
             // vertical syncs, blanks are the same
@@ -250,7 +250,7 @@ module mc6847 (
             // generate linebuffer address
             // - alternate every 2nd line
             vga_linebuf_addr <= {!v_count[0], vga_active_h_count};
-            vga_vblank_r     <= vga_vblank;
+            vga_vblank_r     = vga_vblank;
           end
      end
 
@@ -267,9 +267,9 @@ module mc6847 (
         if (reset)
           begin
              fs_int         <= 1'b0;
-             h_count        <= H_TOTAL_PER_LINE;
-             v_count        <= V2_TOTAL_PER_FIELD;
-             active_h_count <= 0;
+             h_count        = H_TOTAL_PER_LINE;
+             v_count        = V2_TOTAL_PER_FIELD;
+             active_h_count = 0;
              active_h_start <= 1'b0;
              cvbs_hsync     <= 1'b1;
              cvbs_vsync     <= 1'b1;
@@ -277,19 +277,19 @@ module mc6847 (
              cvbs_vblank    <= 1'b1;
              vga_vblank     <= 1'b1;
              da0_int        <= 0;
-             cvbs_hblank_r  <= 1'b0;
-             row_v          <= 0;
+             cvbs_hblank_r  = 1'b0;
+             row_v          = 0;
           end
         else if (cvbs_clk_ena)
           begin
              active_h_start <= 1'b0;
              if (h_count == H_TOTAL_PER_LINE)
                begin
-                  h_count <= 0;
+                  h_count = 0;
                   if (v_count == V2_TOTAL_PER_FIELD)
-                    v_count <= 0;
+                    v_count = 0;
                   else
-                    v_count <= v_count + 1;
+                    v_count = v_count + 1;
 
                   // VGA vblank is 1 line behind CVBS
                   // - because we need to fill the line buffer
@@ -311,8 +311,8 @@ module mc6847 (
                   else if (v_count == V2_TOP_BORDER)
                     begin
                        cvbs_vblank    <= 1'b0;
-                       row_v          <= 0;
-                       videoaddr_base <= 0;
+                       row_v          = 0;
+                       videoaddr_base = 0;
                        tripletaddr    <= 0;
                        tripletcnt     <= 0;
                     end
@@ -330,27 +330,27 @@ module mc6847 (
                        if (an_g_s == 1'b0)
                          begin
                             if (row_v == 11)
-                              videoaddr_base <= videoaddr_base + 32;
+                              videoaddr_base = videoaddr_base + 32;
                          end
                        else
                          begin
                             case (gm)
                               3'b000,3'b001:
                                 if (tripletcnt == 2)
-                                  videoaddr_base <= videoaddr_base + 16;
+                                  videoaddr_base = videoaddr_base + 16;
                               3'b010:
                                 if (tripletcnt == 2)
-                                  videoaddr_base <= videoaddr_base + 32;
+                                  videoaddr_base = videoaddr_base + 32;
                               3'b011:
                                 if (row_v[0] == 1'b1)
-                                  videoaddr_base <= videoaddr_base + 16;
+                                  videoaddr_base = videoaddr_base + 16;
                               3'b100:
                                 if (row_v[0] == 1'b1)
-                                  videoaddr_base <= videoaddr_base + 32;
+                                  videoaddr_base = videoaddr_base + 32;
                               3'b101:
-                                videoaddr_base <= videoaddr_base + 16;
+                                videoaddr_base = videoaddr_base + 16;
                               3'b110, 3'b111:
-                                videoaddr_base <= videoaddr_base + 32;
+                                videoaddr_base = videoaddr_base + 32;
                             endcase
                          end
                        if (tripletcnt == 2)  // mode 1,1a,2a
@@ -363,14 +363,14 @@ module mc6847 (
                             tripletcnt <= tripletcnt + 1;
                          end
                        if (row_v == 11)
-                         row_v <= 0;
+                         row_v = 0;
                        else
-                         row_v <= row_v + 1;
+                         row_v = row_v + 1;
                     end
                end
              else
                begin
-                  h_count <= h_count + 1;
+                  h_count = h_count + 1;
 
                   if (h_count == H_FRONT_PORCH)
                     cvbs_hsync <= 1'b0;
@@ -379,7 +379,7 @@ module mc6847 (
                   else if (h_count == H_BACK_PORCH)
                     ;
                   else if (h_count == H_LEFT_RSTADDR)
-                    active_h_count <= 0;
+                    active_h_count = 0;
                   else if (h_count == H_LEFT_BORDER)
                     begin
                        cvbs_hblank    <= 1'b0;
@@ -388,12 +388,12 @@ module mc6847 (
                   else if (h_count == H_VIDEO)
                     begin
                        cvbs_hblank    <= 1'b1;
-                       active_h_count <= active_h_count + 1;
+                       active_h_count = active_h_count + 1;
                     end
                   else if (h_count == H_RIGHT_BORDER)
                     ;
                   else
-                    active_h_count <= active_h_count + 1;
+                    active_h_count = active_h_count + 1;
                end
 
              // generate character rom address
@@ -416,7 +416,7 @@ module mc6847 (
              cvbs_linebuf_addr_r  <= cvbs_linebuf_addr;
              cvbs_linebuf_we_rr   <= cvbs_linebuf_we_r;
              cvbs_linebuf_addr_rr <= cvbs_linebuf_addr_r;
-             cvbs_hblank_r        <= cvbs_hblank;
+             cvbs_hblank_r        = cvbs_hblank;
 
              if (an_g_s == 1'b0)
                begin
@@ -447,12 +447,12 @@ module mc6847 (
      begin
         if (reset)
           begin
-            count <= 0;
+            count = 0;
           end
         else if (cvbs_clk_ena)
           begin
              if (active_h_start)
-               count <= 0;
+               count = 0;
              if (an_g_s == 1'b0)
                // alpha-semi modes
                if (count[2:0] == 0)
@@ -519,7 +519,7 @@ module mc6847 (
                             dd_r <= { dd_r[5:0], 2'b00 };  // CG2/CG3/CG6
                   endcase
                end // else: !if(count[2:0] == 0)
-             count <= count + 1;
+             count = count + 1;
           end
      end
 
@@ -623,7 +623,7 @@ module mc6847 (
                   if (cvbs_clk_ena)
                     begin
                        if (cvbs_hblank == 1'b0 && cvbs_vblank == 1'b0)
-                         {red, green, blue} <= map_palette (vga_char_d_o);
+                         {red, green, blue} <= map_pallette (vga_char_d_o);
                        else
                          {red, green, blue} <= 0;
                     end
