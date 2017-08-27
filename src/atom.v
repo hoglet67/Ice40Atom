@@ -345,7 +345,7 @@ module atom (
    wire        spi_cs = (address[15:10] == 6'b101101);
    wire        via_cs = (address[15:10] == 6'b101110);
    wire        ram_cs = (address[15]    == 1'b0) | rom_cs;
-   wire        vid_cs = (address[15:12] == 4'b1000);
+   wire        vid_cs = (address[15:13] == 3'b100);
 
    wire        wemask = rom_cs;
 
@@ -395,12 +395,12 @@ module atom (
       // Port A
       .clk_a(!clk_cpu),    // Clock of negative edge to mask register latency
       .we_a(we_a),
-      .addr_a(address[10:0]),
+      .addr_a(address[12:0]),
       .din_a(cpu_dout),
       .dout_a(vid_dout),
       // Port B
       .clk_b(clk_vga),
-      .addr_b(vid_addr[10:0]),
+      .addr_b(vid_addr[12:0]),
       .dout_b(vid_data)
       );
 

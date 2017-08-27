@@ -2,18 +2,18 @@ module vid_ram (
                 // Port A
                 input            clk_a,
                 input            we_a,
-                input [10:0]     addr_a,
+                input [12:0]     addr_a,
                 input [7:0]      din_a,
                 output reg [7:0] dout_a,
                 // Port B
                 input            clk_b,
-                input [10:0]     addr_b,
+                input [12:0]     addr_b,
                 output reg [7:0] dout_b            
             );
 
    parameter MEM_INIT_FILE = "../mem/vid_ram.mem";
    
-   reg [7:0]                     ram [0:2047];
+   reg [7:0]                     ram [0:6143];
 
    initial
      if (MEM_INIT_FILE != "")
