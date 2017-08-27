@@ -26,17 +26,32 @@
 module atom (
              // Main clock, 100MHz
              input         clk100,
+             // ARM SPI slave, to bootstrap load the ROMS
+             input         arm_ss,
+             input         arm_sclk,
+             input         arm_mosi,
+             output        arm_miso,
+             // SD Card SPI master
+             output        ss,
+             output        sclk,
+             output        mosi,
+             input         miso,
+             // Test outputs
+             output        test0,
+             output        test1,
+             output        test2,
+             output        test3,
              // LEDs
-             output        led1,
-             output        led2,
-             output        led3,
-             output        led4,
+             //output        led1,
+             //output        led2,
+             //output        led3,
+             //output        led4,
              // Switches
-             input         sw1_1,
-             input         sw1_2,
-             input         sw2_1,
-             input         sw2_2,
-             input         sw3,
+             //input         sw1_1,
+             //input         sw1_2,
+             //input         sw2_1,
+             //input         sw2_2,
+             //input         sw3,
              input         sw4,
              // External RAM
              output        RAMWE_b,
@@ -81,7 +96,7 @@ module atom (
    wire wegate = (clkdiv == 0);
 
    // ===============================================================
-   // VGA Clock generation
+   // Other Clock generation
    // ===============================================================
 
    wire clk_vga = clkpre[1];
@@ -89,6 +104,8 @@ module atom (
 
    always @(posedge clk_vga)
      clk_vga_en <= !clk_vga_en;
+
+   wire clk_spi = clk_vga_en;
 
    // ===============================================================
    // Reset generation
@@ -105,16 +122,16 @@ module atom (
         hard_reset_n <= sw4 & pwr_up_reset_n;
      end
 
-   wire reset = !hard_reset_n | !break_n;
+   wire reset = !hard_reset_n | !break_n | booting;
 
    // ===============================================================
    // LEDs
    // ===============================================================
 
-   assign led1 = reset;    // blue
-   assign led2 = 1'b1;     // green
-   assign led3 = 1'b0;     // yellow
-   assign led4 = 1'b0;     // red
+   //assign led1 = reset;    // blue
+   //assign led2 = 1'b1;     // green
+   //assign led3 = 1'b0;     // yellow
+   //assign led4 = 1'b0;     // red
 
    // ===============================================================
    // Keyboard
@@ -159,7 +176,7 @@ module atom (
           cas_tone = !cas_tone;
        end
      else
-       cas_div = cas_div + 1;
+       cas_div <= cas_div + 1;
 
    assign sound = pia_pc[2];
 
@@ -168,19 +185,68 @@ module atom (
    assign cas_out = !(!(!cas_tone & pia_pc[1]) & pia_pc[0]);
 
    // ===============================================================
+   // Bootstrap (of ROM content from ARM into RAM )
+   // ===============================================================
+
+   wire        booting;
+
+   wire        atom_RAMCS_b = 1'b0;
+   wire        atom_RAMOE_b = !rnw;
+   wire        atom_RAMWE_b = rnw  | wegate;
+   wire [17:0] atom_RAMA    = { 2'b00, address };
+   wire [7:0]  atom_RAMDin  = cpu_dout;
+
+   wire        ext_RAMCS_b;
+   wire        ext_RAMOE_b;
+   wire        ext_RAMWE_b;
+   wire [17:0] ext_RAMA;
+   wire [7:0]  ext_RAMDin;
+
+   wire        progress;
+
+   bootstrap BS
+     (
+      .clk(clk100),
+      .booting(booting),
+      .progress(progress),
+      // SPI Slave Interface (runs at 20MHz)
+      .SCK(arm_sclk),
+      .SSEL(arm_ss),
+      .MOSI(arm_mosi),
+      .MISO(arm_miso),
+      // RAM from Atom
+      .atom_RAMCS_b(atom_RAMCS_b),
+      .atom_RAMOE_b(atom_RAMOE_b),
+      .atom_RAMWE_b(atom_RAMWE_b),
+      .atom_RAMA(atom_RAMA),
+      .atom_RAMDin(atom_RAMDin),
+      // RAM to external SRAM
+      .ext_RAMCS_b(ext_RAMCS_b),
+      .ext_RAMOE_b(ext_RAMOE_b),
+      .ext_RAMWE_b(ext_RAMWE_b),
+      .ext_RAMA(ext_RAMA),
+      .ext_RAMDin(ext_RAMDin)
+   );
+
+   assign test0 = arm_ss;
+   assign test1 = arm_sclk;
+   assign test2 = arm_mosi;
+   assign test3 = progress;
+
+   // ===============================================================
    // External RAM
    // ===============================================================
 
-   assign RAMCS_b = 1'b0;
-   assign RAMOE_b = !rnw;
-   assign RAMWE_b = rnw  | wegate;
-   assign ADR = { 2'b00, address };
+   assign RAMCS_b = ext_RAMCS_b;
+   assign RAMOE_b = ext_RAMOE_b;
+   assign RAMWE_b = ext_RAMWE_b;
+   assign ADR     = ext_RAMA;
 
 `ifdef use_sb_io
    // IceStorm cannot infer bidirectional I/Os
    wire [7:0] data_pins_in;
-   wire [7:0] data_pins_out = cpu_dout;
-   wire       data_pins_out_en = !(rnw | wegate); // Added wegate to avoid bus conflicts
+   wire [7:0] data_pins_out = ext_RAMDin;
+   wire       data_pins_out_en = !ext_RAMWE_b;
    SB_IO #(
            .PIN_TYPE(6'b 1010_01)
            ) sram_data_pins [7:0] (
@@ -190,7 +256,7 @@ module atom (
                                    .D_IN_0(data_pins_in)
                                    );
 `else
-   assign DAT = (rnw | wegate) ? 8'bz : cpu_dout;
+   assign DAT = (ext_RAMWE_b) ? 8'bz : ext_RAMDin;
    wire [7:0] data_pins_in = DAT;
 `endif
 
@@ -274,32 +340,43 @@ module atom (
    // Address decoding logic and data in multiplexor
    // ===============================================================
 
-   wire        rom_cs = (address[15:12] == 4'b1100 || address[15:12] == 4'b1111);
+   wire        rom_cs = (address[15:14] == 2'b11);
    wire        pia_cs = (address[15:10] == 6'b101100);
+   wire        spi_cs = (address[15:10] == 6'b101101);
    wire        via_cs = (address[15:10] == 6'b101110);
    wire        ram_cs = (address[15]    == 1'b0);
    wire        vid_cs = (address[15:12] == 4'b1000);
 
    assign cpu_din = ram_cs   ? data_pins_in :
                     vid_cs   ? vid_dout :
-                    rom_cs   ? rom_dout :
+                    rom_cs   ? data_pins_in :
                     pia_cs   ? pia_dout :
+                    spi_cs   ? spi_dout :
                     via_cs   ? via_dout :
                     address[15:8] & 8'hF1; // this is what is normally seen for
-   // unused address space in the atom due
-   // to data bus capacitance and pull downs
+                                           // unused address space in the atom due
+                                           // to data bus capacitance and pull downs
 
    // ===============================================================
-   // BASIC and MOS ROM
+   // SD Card Interface
    // ===============================================================
 
-   wire [7:0]  rom_dout;
-   rom_c000_f000 ROM
+   wire [7:0]  spi_dout;
+
+   spi SPI
      (
-      .clk(clk_cpu),
-      .address(address_c[12:0]), // fed directly from CPU to mask BRAM register
-      .dout(rom_dout)
-      );
+      .clk(clk_spi),
+      .reset(reset),
+      .enable(spi_cs),
+      .rnw(rnw),
+      .addr(address[2:0]),
+      .din(cpu_dout),
+      .dout(spi_dout),
+      .miso(miso),
+      .mosi(mosi),
+      .ss(ss),
+      .sclk(sclk)
+   );
 
    // ===============================================================
    // Dual Port Video RAM

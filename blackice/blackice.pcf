@@ -3,18 +3,36 @@
 # Onboard 100MHz oscillator
 set_io clk100 129
 
+# ARM SPI Port
+set_io arm_ss   71 # also LED1
+set_io arm_miso 67 # also LED2
+set_io arm_mosi 68 # also LED3
+set_io arm_sclk 70 # also LED4
+
+# Test
+set_io test0 106 # PMOD23 PMOD 5/6 pin  6
+set_io test1 110 # PMOD22 PMOD 5/6 pin  8
+set_io test2 113 # PMOD21 PMOD 5/6 pin 10
+set_io test3 144 # PMOD20 PMOD 5/6 pin 12
+
 # LEDs (active high)
-set_io led1     71
-set_io led2     67
-set_io led3     68
-set_io led4     70
+#set_io led1     71
+#set_io led2     67
+#set_io led3     68
+#set_io led4     70
+
+# SD Card
+set_io SS       38 # DIG18
+set_io SSLK     37 # DIG19
+set_io MOSI     41 # DIG16
+set_io MISO     63 # B1
 
 # Switches
-set_io sw1_2    37 # DIG19
-set_io sw1_1    38 # DIG18
-set_io sw2_2    39 # DIG17
-set_io sw2_1    41 # DIG16
-set_io sw3      63 # B1 (active low)
+#set_io sw1_2    37 # DIG19
+#set_io sw1_1    38 # DIG18
+#set_io sw2_2    39 # DIG17
+#set_io sw2_1    41 # DIG16
+#set_io sw3      63 # B1 (active low)
 set_io sw4      64 # B2 (active low)
 
 # Cassette / Sound

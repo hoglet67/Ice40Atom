@@ -8,8 +8,9 @@
 #include "usbd_cdc_if.h"
 #include "stm32l4xx_hal.h"
 #include "errno.h"
+#include "atom_roms.h"
 
-#define VER "0.31"
+#define VER "0.32 Ice40Atom"
 
 enum { FLASH_ICE40_START = 0x0801F000, FLASH_ICE40_END = 0x08040000 };
 enum { OK, TIMEOUT, ICE_ERROR };
@@ -579,6 +580,16 @@ loop(void)
 		return;
 	}
 	err = ice40_configdone();
+
+   // Additional code to send the Atom ROMs (16KB total)
+	gpio_high(ICE40_SPI_CS);
+   HAL_Delay(100);
+	uart_puts("Sending Atom ROMS\n");
+	gpio_low(ICE40_SPI_CS);
+	spi_write(&atom_roms_bin[0], 16384);
+	gpio_high(ICE40_SPI_CS);
+	uart_puts("Done\n");
+
 	spi_detach();
 	enable_mux_out();
 	status_led_low();
