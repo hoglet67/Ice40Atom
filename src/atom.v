@@ -452,7 +452,7 @@ module atom (
       .artifact_set(1'b0),
       .artifact_phase(1'b1),
       .cvbs(),
-      .black_backgnd(1'b0),
+      .black_backgnd(1'b1),
       .char_a(char_a),
       .char_d_o(char_d)
       );

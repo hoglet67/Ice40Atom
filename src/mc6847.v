@@ -146,7 +146,7 @@ module mc6847 (
          else
            begin
               // not quite black in alpha mode
-              if (black_backgnd == 0 && an_g_v == 0 && an_s_v == 0)
+              if (black_backgnd == 1'b0 && an_g_v == 1'b0 && an_s_v == 1'b0)
                 begin
                    // dark green/orange
                    r = {1'b0 , css_v};
