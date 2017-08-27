@@ -23,11 +23,6 @@ module opc6tb();
    
 atom DUT (
           .clk100(clk),
-          .sw1_1(1'b0),
-          .sw1_2(1'b0),
-          .sw2_1(1'b0),
-          .sw2_2(1'b0),
-          .sw3(1'b1),
           .sw4(reset_b),
 
           .RAMWE_b(ramwe_b),

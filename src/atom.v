@@ -93,7 +93,7 @@ module atom (
    wire clk_cpu = clkdiv[4];
 
    // It's pretty arbitrary when in the cycle the write actually happens
-   wire wegate = (clkdiv == 0);
+   wire wegate_b = (clkdiv != 0);
 
    // ===============================================================
    // Other Clock generation
@@ -192,7 +192,7 @@ module atom (
 
    wire        atom_RAMCS_b = 1'b0;
    wire        atom_RAMOE_b = !rnw;
-   wire        atom_RAMWE_b = rnw  | wegate;
+   wire        atom_RAMWE_b = rnw  | wegate_b | wemask;
    wire [17:0] atom_RAMA    = { 2'b00, address };
    wire [7:0]  atom_RAMDin  = cpu_dout;
 
@@ -344,12 +344,13 @@ module atom (
    wire        pia_cs = (address[15:10] == 6'b101100);
    wire        spi_cs = (address[15:10] == 6'b101101);
    wire        via_cs = (address[15:10] == 6'b101110);
-   wire        ram_cs = (address[15]    == 1'b0);
+   wire        ram_cs = (address[15]    == 1'b0) | rom_cs;
    wire        vid_cs = (address[15:12] == 4'b1000);
+
+   wire        wemask = rom_cs;
 
    assign cpu_din = ram_cs   ? data_pins_in :
                     vid_cs   ? vid_dout :
-                    rom_cs   ? data_pins_in :
                     pia_cs   ? pia_dout :
                     spi_cs   ? spi_dout :
                     via_cs   ? via_dout :

@@ -22,10 +22,10 @@ set_io test3 144 # PMOD20 PMOD 5/6 pin 12
 #set_io led4     70
 
 # SD Card
-set_io SS       38 # DIG18
-set_io SSLK     37 # DIG19
-set_io MOSI     41 # DIG16
-set_io MISO     63 # B1
+set_io ss       38 # DIG18
+set_io sclk     37 # DIG19
+set_io mosi     41 # DIG16
+set_io miso     63 # B1
 
 # Switches
 #set_io sw1_2    37 # DIG19

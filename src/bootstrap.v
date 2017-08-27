@@ -31,8 +31,8 @@ module bootstrap
    // Atom ROM Start/End addresses
    // ===============================================================
 
-   parameter     BOOT_START_ADDR = 'h0C000; // FIXME for testing
-   parameter     BOOT_END_ADDR   = 'h0FFFF; // FIXME for testing
+   parameter     BOOT_START_ADDR = 'h02900;
+   parameter     BOOT_END_ADDR   = 'h0FFFF;
 
    // ===============================================================
    // Local registers

@@ -10,7 +10,7 @@
 #include "errno.h"
 #include "atom_roms.h"
 
-#define VER "0.32 Ice40Atom"
+#define VER "0.33 Ice40Atom"
 
 enum { FLASH_ICE40_START = 0x0801F000, FLASH_ICE40_END = 0x08040000 };
 enum { OK, TIMEOUT, ICE_ERROR };
@@ -586,7 +586,7 @@ loop(void)
    HAL_Delay(100);
 	uart_puts("Sending Atom ROMS\n");
 	gpio_low(ICE40_SPI_CS);
-	spi_write(&atom_roms_bin[0], 16384);
+	spi_write(&atom_roms_bin[0], atom_roms_bin_len);
 	gpio_high(ICE40_SPI_CS);
 	uart_puts("Done\n");
 
