@@ -23,7 +23,12 @@
 // the instantaion of SB_IO (as inferrence broken)
 // `define use_sb_io
 
-module atom (
+module atom
+  #(
+    parameter charrom_init_file = "../mem/charrom.mem",
+    parameter vid_ram_init_file = "../mem/vid_ram.mem"
+    )
+   (
              // Main clock, 100MHz
              input         clk100,
              // ARM SPI slave, to bootstrap load the ROMS
@@ -74,6 +79,19 @@ module atom (
              output        vsync
              );
 
+   reg         hard_reset_n;
+   wire        booting;
+   wire        break_n;
+   reg [7:0]   pia_pa_r = 8'b00000000;
+   reg         rnw;
+   wire [7:0]  pia_pc;
+   wire        pia_cs;
+   wire        wemask;
+   reg [15:0]  address;
+   reg [7:0]   cpu_dout;
+   wire [7:0]  vid_dout;
+   wire [7:0]  spi_dout;
+
    // ===============================================================
    // CPU Clock generation
    // ===============================================================
@@ -113,7 +131,6 @@ module atom (
 
    reg [9:0] pwr_up_reset_counter = 0; // hold reset low for ~1ms
    wire      pwr_up_reset_n = &pwr_up_reset_counter;
-   reg       hard_reset_n;
 
    always @(posedge clk_cpu)
      begin
@@ -140,7 +157,6 @@ module atom (
    wire rept_n;
    wire shift_n;
    wire ctrl_n;
-   wire break_n;
    wire [3:0] row = pia_pa_r[3:0];
    wire [5:0] keyout;
 
@@ -188,7 +204,6 @@ module atom (
    // Bootstrap (of ROM content from ARM into RAM )
    // ===============================================================
 
-   wire        booting;
 
    wire        atom_RAMCS_b = 1'b0;
    wire        atom_RAMOE_b = !rnw;
@@ -273,12 +288,12 @@ module atom (
    // This model is still very crude, specifically the directions of
    // the ports are fixed (not normally a problem on the Atom)
 
+   wire        fs_n;
    reg [7:0]  pia_dout;
-   reg [7:0]  pia_pa_r = 8'b00000000;
    reg [3:0]  pia_pc_r = 4'b0000;
    wire [7:0] pia_pa   = { pia_pa_r };
    wire [7:0] pia_pb   = { shift_n, ctrl_n, keyout };
-   wire [7:0] pia_pc   = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
+   assign pia_pc   = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
 
    always @(posedge clk_cpu)
      begin
@@ -308,10 +323,7 @@ module atom (
 
    wire  [7:0] cpu_din;
    wire [7:0]  cpu_dout_c;
-   reg [7:0]   cpu_dout;
    wire [15:0] address_c;
-   reg [15:0]  address;
-   reg         rnw;
    wire        rnw_c;
 
    // Arlet's 6502 core is one of the smallest available
@@ -341,13 +353,13 @@ module atom (
    // ===============================================================
 
    wire        rom_cs = (address[15:14] == 2'b11);
-   wire        pia_cs = (address[15:10] == 6'b101100);
+   assign      pia_cs = (address[15:10] == 6'b101100);
    wire        spi_cs = (address[15:10] == 6'b101101);
    wire        via_cs = (address[15:10] == 6'b101110);
    wire        ram_cs = (address[15]    == 1'b0) | rom_cs;
    wire        vid_cs = (address[15:13] == 3'b100);
 
-   wire        wemask = rom_cs;
+   assign      wemask = rom_cs;
 
    assign cpu_din = ram_cs   ? data_pins_in :
                     vid_cs   ? vid_dout :
@@ -361,8 +373,6 @@ module atom (
    // ===============================================================
    // SD Card Interface
    // ===============================================================
-
-   wire [7:0]  spi_dout;
 
    spi SPI
      (
@@ -384,13 +394,14 @@ module atom (
    // ===============================================================
 
    // Port A to CPU
-   wire [7:0]  vid_dout;
    wire        we_a = vid_cs & !rnw;
    // Port B to VDG
    wire [12:0] vid_addr;
    wire [7:0]  vid_data;
 
-   vid_ram VID_RAM
+   vid_ram
+     #(.MEM_INIT_FILE (vid_ram_init_file))
+   VID_RAM
      (
       // Port A
       .clk_a(!clk_cpu),    // Clock of negative edge to mask register latency
@@ -408,7 +419,6 @@ module atom (
    // 6847 VDG
    // ===============================================================
 
-   wire        fs_n;
    wire        an_g     = pia_pa[4];
    wire [2:0]  gm       = pia_pa[7:5];
    wire        css      = pia_pc[3];
@@ -457,7 +467,9 @@ module atom (
       .char_d_o(char_d)
       );
 
-   charrom CHARROM
+   charrom
+     #(.MEM_INIT_FILE (charrom_init_file))
+   CHARROM
      (
       .clk(clk_vga),
       .address(char_a),

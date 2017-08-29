@@ -1,0 +1,60 @@
+CAPI=1
+
+[main]
+name = ::Ice40Atom:0
+simulators = icarus modelsim
+backend = icestorm
+
+[fileset rtl]
+files =
+ src/atom.v
+ src/cpu.v
+ src/ALU.v
+ src/rom_c000_f000.v
+ src/mc6847.v
+ src/charrom.v
+ src/vid_ram.v
+ src/keyboard.v
+ src/ps2_intf.v
+ mem/charrom.mem[is_include_file]
+ mem/vid_ram.mem[is_include_file]
+file_type = verilogSource
+
+[fileset top]
+files =
+ src/bootstrap.v
+ src/spi.v
+ blackice/blackice.pcf[file_type=PCF]
+file_type = verilogSource
+
+[fileset tb]
+files = src/atom_tb.v
+file_type = verilogSource
+
+[simulator]
+toplevel = opc6tb
+
+[icestorm]
+arachne_pnr_options = -d 8k -P tq144:4k
+top_module = atom
+
+[parameter charrom_init_file]
+datatype    = str
+default     = ../src/Ice40Atom_0/mem/charrom.mem
+description = Char ROM contents
+paramtype   = vlogparam
+scope       = private
+
+[parameter vid_ram_init_file]
+datatype    = str
+default     = ../src/Ice40Atom_0/mem/vid_ram.mem
+description = Initial Video RAM contents
+paramtype   = vlogparam
+scope       = private
+
+[parameter use_sb_io]
+datatype = bool
+default = False
+description = Manually instantiate SB I/O components (required for build)
+paramtype = vlogdefine
+scope = private

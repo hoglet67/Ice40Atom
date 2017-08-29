@@ -1,5 +1,9 @@
 `timescale 1ns / 1ns
-module opc6tb();
+module opc6tb
+  #(
+    parameter charrom_init_file = "../mem/charrom.mem",
+    parameter vid_ram_init_file = "../mem/vid_ram.mem"
+    );
    reg [17:0]  mem [ 0:262143 ];
    
    reg         clk;
@@ -21,7 +25,12 @@ module opc6tb();
    wire        g_msb  = g[2];
    wire        b_msb  = b[1];
    
-atom DUT (
+atom
+  #(
+    .charrom_init_file (charrom_init_file),
+    .vid_ram_init_file (vid_ram_init_file)
+    )
+   DUT (
           .clk100(clk),
           .sw4(reset_b),
 
