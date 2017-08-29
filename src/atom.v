@@ -23,7 +23,12 @@
 // the instantaion of SB_IO (as inferrence broken)
 // `define use_sb_io
 
-module atom (
+module atom
+  #(
+    parameter charrom_init_file = "../mem/charrom.mem",
+    parameter vid_ram_init_file = "../mem/vid_ram.mem"
+    )
+   (
              // Main clock, 100MHz
              input         clk100,
              // ARM SPI slave, to bootstrap load the ROMS
@@ -390,7 +395,9 @@ module atom (
    wire [12:0] vid_addr;
    wire [7:0]  vid_data;
 
-   vid_ram VID_RAM
+   vid_ram
+     #(.MEM_INIT_FILE (vid_ram_init_file))
+   VID_RAM
      (
       // Port A
       .clk_a(!clk_cpu),    // Clock of negative edge to mask register latency
@@ -457,7 +464,9 @@ module atom (
       .char_d_o(char_d)
       );
 
-   charrom CHARROM
+   charrom
+     #(.MEM_INIT_FILE (charrom_init_file))
+   CHARROM
      (
       .clk(clk_vga),
       .address(char_a),
