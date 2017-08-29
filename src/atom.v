@@ -24,10 +24,6 @@
 // `define use_sb_io
 
 module atom
-  #(
-    parameter charrom_init_file = "../mem/charrom.mem",
-    parameter vid_ram_init_file = "../mem/vid_ram.mem"
-    )
    (
              // Main clock, 100MHz
              input         clk100,
@@ -78,6 +74,20 @@ module atom
              output        hsync,
              output        vsync
              );
+
+   // ===============================================================
+   // Parameters
+   // ===============================================================
+
+   parameter CHARROM_INIT_FILE = "../mem/charrom.mem";
+   parameter VID_RAM_INIT_FILE = "../mem/vid_ram.mem";
+   parameter BOOT_START_ADDR   = 'h02900;
+   parameter BOOT_END_ADDR     = 'h0FFFF;
+
+   // ===============================================================
+   // Wires/Reg definitions
+   // TODO: reorganize so all defined here
+   // ===============================================================
 
    reg         hard_reset_n;
    wire        booting;
@@ -219,7 +229,12 @@ module atom
 
    wire        progress;
 
-   bootstrap BS
+   bootstrap
+     #(
+       .BOOT_START_ADDR(BOOT_START_ADDR),
+       .BOOT_END_ADDR(BOOT_END_ADDR)
+       )
+   BS
      (
       .clk(clk100),
       .booting(booting),
@@ -400,7 +415,7 @@ module atom
    wire [7:0]  vid_data;
 
    vid_ram
-     #(.MEM_INIT_FILE (vid_ram_init_file))
+     #(.MEM_INIT_FILE (VID_RAM_INIT_FILE))
    VID_RAM
      (
       // Port A
@@ -468,7 +483,7 @@ module atom
       );
 
    charrom
-     #(.MEM_INIT_FILE (charrom_init_file))
+     #(.MEM_INIT_FILE (CHARROM_INIT_FILE))
    CHARROM
      (
       .clk(clk_vga),
