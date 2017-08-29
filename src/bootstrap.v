@@ -3,7 +3,7 @@ module bootstrap
 
    // Clock needs to be clk100 (i.e. >> SCK)
    input         clk,
-   output        booting,
+   output reg    booting = 1'b1,
    output        progress,
 
    // SPI Slave Interface (runs at 20MHz)
@@ -38,7 +38,6 @@ module bootstrap
    // Local registers
    // ===============================================================
 
-   reg           booting = 1'b1;
    reg           boot_RAMWE_b;
    reg [17:0]    boot_RAMA;
    reg [7:0]     boot_RAMDin;
