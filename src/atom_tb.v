@@ -24,15 +24,15 @@ module opc6tb();
    wire        ramwe_b;
    wire        ramoe_b;
    wire        ramcs_b;
-   wire [2:0]  r;
-   wire [2:0]  g;
-   wire [1:0]  b;
+   wire [3:0]  red;
+   wire [3:0]  green;
+   wire [3:0]  blue;
    wire        hsync;
    wire        vsync;
 
-   wire        r_msb  = r[2];
-   wire        g_msb  = g[2];
-   wire        b_msb  = b[1];
+   wire        r_msb  = red[3];
+   wire        g_msb  = green[3];
+   wire        b_msb  = blue[3];
 
    reg         arm_ss;
    reg         arm_sclk;
@@ -70,9 +70,9 @@ atom
       .ADR(addr),
       .DAT(data),
 
-      .r(r),
-      .g(g),
-      .b(b),
+      .red(red),
+      .green(green),
+      .blue(blue),
       .hsync(hsync),
       .vsync(vsync)
       );

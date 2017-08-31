@@ -68,9 +68,9 @@ module atom
              input         ps2_clk,
              input         ps2_data,
              // Video
-             output [2:0]  r,
-             output [2:0]  g,
-             output [1:0]  b,
+             output [3:0]  red,
+             output [3:0]  green,
+             output [3:0]  blue,
              output        hsync,
              output        vsync
              );
@@ -442,13 +442,6 @@ module atom
    wire        an_s     = vid_data[6]; // See Atom schematic
    wire [10:0] char_a;
    wire [7:0]  char_d;
-   wire [3:0]  red;
-   wire [3:0]  green;
-   wire [3:0]  blue;
-
-   assign r = red[3:1];
-   assign g = green[3:1];
-   assign b = blue[3:2];
 
    mc6847 VDG
      (
