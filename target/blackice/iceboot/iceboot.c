@@ -10,7 +10,7 @@
 #include "errno.h"
 #include "atom_roms.h"
 
-#define VER "0.33 Ice40Atom"
+#define VER "0.34 Ice40Atom"
 
 enum { FLASH_ICE40_START = 0x0801F000, FLASH_ICE40_END = 0x08040000 };
 enum { OK, TIMEOUT, ICE_ERROR };
@@ -484,13 +484,25 @@ rbits(Reader rbyte, int firstb)
 }
 
 char tohexdigit(int i) {
-   i &= 15;
-   if (i >= 10) {
-      return 'A' + i - 10;
-   } else {
-      return '0' + i;
-   }
+	i &= 15;
+	if (i >= 10) {
+		return 'A' + i - 10;
+	} else {
+		return '0' + i;
+	}
 }
+
+void send_atom_roms() {
+	// Additional code to send the Atom ROMs (16KB total)
+	gpio_high(ICE40_SPI_CS);
+	HAL_Delay(100);
+	uart_puts("Sending Atom ROMS\n");
+	gpio_low(ICE40_SPI_CS);
+	spi_write(&atom_roms_bin[0], atom_roms_bin_len);
+	gpio_high(ICE40_SPI_CS);
+	uart_puts("Done\n");
+}
+
 /*
  * Setup function (called once at powerup)
  *	- flush any input in uart buffer
@@ -500,8 +512,8 @@ void
 setup(void)
 {
 	uint8_t b;
-   uint8_t blver;
-   char blverstr[3];
+	uint8_t blver;
+	char blverstr[3];
  
 	disable_mux_out();
 	spi_detach();
@@ -510,12 +522,12 @@ setup(void)
 	endmem = (uint8_t*)FLASH_ICE40_END;
 	uart_puts("Mystorm version ");
 	uart_puts(VER);
-   uart_puts(" Bootloader version ");
-   blver = *((uint8_t *)0x1FFF6FF2);
-   blverstr[0] = tohexdigit((blver >> 4)); 
-   blverstr[1] = tohexdigit(blver); 
-   blverstr[2] = 0; 
-   uart_puts(blverstr);
+	uart_puts(" Bootloader version ");
+	blver = *((uint8_t *)0x1FFF6FF2);
+	blverstr[0] = tohexdigit((blver >> 4));
+	blverstr[1] = tohexdigit(blver);
+	blverstr[2] = 0;
+	uart_puts(blverstr);
 	uart_puts("\n");
 	crc_reset();
 	if (rbits(rbyte_mem_check, 0) == OK) {
@@ -531,6 +543,8 @@ setup(void)
 			uart_puts("rbits failed\n");
 		else if (ice40_configdone() != OK)
 			uart_puts("configdone failed\n");
+		else
+			send_atom_roms();
 		spi_detach();
 		status_led_low();
 	}
@@ -580,16 +594,8 @@ loop(void)
 		return;
 	}
 	err = ice40_configdone();
-
-   // Additional code to send the Atom ROMs (16KB total)
-	gpio_high(ICE40_SPI_CS);
-   HAL_Delay(100);
-	uart_puts("Sending Atom ROMS\n");
-	gpio_low(ICE40_SPI_CS);
-	spi_write(&atom_roms_bin[0], atom_roms_bin_len);
-	gpio_high(ICE40_SPI_CS);
-	uart_puts("Done\n");
-
+	if (!err)
+		send_atom_roms();
 	spi_detach();
 	enable_mux_out();
 	status_led_low();
