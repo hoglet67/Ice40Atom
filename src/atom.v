@@ -101,6 +101,8 @@ module atom
    reg [7:0]   cpu_dout;
    wire [7:0]  vid_dout;
    wire [7:0]  spi_dout;
+   wire [7:0]  via_dout;
+   wire        via_irq_n;
 
    // ===============================================================
    // CPU Clock generation
@@ -120,6 +122,9 @@ module atom
 
    wire clk_cpu = clkdiv[4];
 
+   wire via1_clken = !clk_cpu;
+   wire via4_clken = (clkdiv == 6) | (clkdiv == 12) | (clkdiv == 18) || (clkdiv == 24);
+   
    // It's pretty arbitrary when in the cycle the write actually happens
    wire wegate_b = (clkdiv != 0);
 
@@ -291,12 +296,6 @@ module atom
 `endif
 
    // ===============================================================
-   // 6522 VIA at 0xB8xx - TODO
-   // ===============================================================
-
-   wire [7:0] via_dout = 8'hB1;
-
-   // ===============================================================
    // 8255 PIA at 0xB0xx
    // ===============================================================
 
@@ -350,7 +349,7 @@ module atom
       .DI(cpu_din),
       .DO(cpu_dout_c),
       .WE(rnw_c),
-      .IRQ(1'b0),
+      .IRQ(!via_irq_n),
       .NMI(1'b0),
       .RDY(1'b1)
       );
@@ -385,6 +384,42 @@ module atom
                                            // unused address space in the atom due
                                            // to data bus capacitance and pull downs
 
+   // ===============================================================
+   // 6522 VIA at 0xB8xx
+   // ===============================================================
+
+   m6522 VIA
+     (
+      .I_RS(address[3:0]),
+      .I_DATA(cpu_dout),
+      .O_DATA(via_dout),
+      .O_DATA_OE_L(),
+      .I_RW_L(rnw),
+      .I_CS1(via_cs),
+      .I_CS2_L(1'b0),
+      .O_IRQ_L(via_irq_n),
+      .I_CA1(1'b0),
+      .I_CA2(1'b0),
+      .O_CA2(),
+      .O_CA2_OE_L(),
+      .I_PA(8'b0),
+      .O_PA(),
+      .O_PA_OE_L(),
+      .I_CB1(1'b0),
+      .O_CB1(),
+      .O_CB1_OE_L(),
+      .I_CB2(1'b0),
+      .O_CB2(),
+      .O_CB2_OE_L(),
+      .I_PB(8'b0),
+      .O_PB(),
+      .O_PB_OE_L(),
+      .I_P2_H(via1_clken),
+      .RESET_L(!reset),
+      .ENA_4(via4_clken),
+      .CLK(clk_vga)
+      );
+   
    // ===============================================================
    // SD Card Interface
    // ===============================================================
