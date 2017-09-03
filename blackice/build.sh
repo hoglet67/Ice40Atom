@@ -9,3 +9,4 @@ yosys -q -f "verilog -Duse_sb_io" -l ${NAME}.log -p "synth_ice40 -top ${TOP} -ab
 arachne-pnr -d 8k -P ${PACKAGE} -p blackice.pcf ${NAME}.blif -o ${NAME}.txt
 icepack ${NAME}.txt ${NAME}.bin
 icetime -d hx8k -P ${PACKAGE} ${NAME}.txt
+truncate -s 135104 ${NAME}.bin
