@@ -81,7 +81,7 @@ module atom
 
    parameter CHARROM_INIT_FILE = "../mem/charrom.mem";
    parameter VID_RAM_INIT_FILE = "../mem/vid_ram.mem";
-   parameter BOOT_START_ADDR   = 'h02900;
+   parameter BOOT_START_ADDR   = 'h0C000;
    parameter BOOT_END_ADDR     = 'h0FFFF;
 
    // ===============================================================
@@ -366,10 +366,13 @@ module atom
    // Address decoding logic and data in multiplexor
    // ===============================================================
 
+   wire [7:0]  pl8_dout = 8'b0;
+   
    wire        rom_cs = (address[15:14] == 2'b11);
    assign      pia_cs = (address[15:10] == 6'b101100);
-   wire        spi_cs = (address[15:10] == 6'b101101);
+   wire        pl8_cs = (address[15:10] == 6'b101101);
    wire        via_cs = (address[15:10] == 6'b101110);
+   wire        spi_cs = (address[15:10] == 6'b101111);
    wire        ram_cs = (address[15]    == 1'b0) | rom_cs;
    wire        vid_cs = (address[15:13] == 3'b100);
 
@@ -378,8 +381,9 @@ module atom
    assign cpu_din = ram_cs   ? data_pins_in :
                     vid_cs   ? vid_dout :
                     pia_cs   ? pia_dout :
-                    spi_cs   ? spi_dout :
+                    pl8_cs   ? pl8_dout :
                     via_cs   ? via_dout :
+                    spi_cs   ? spi_dout :
                     address[15:8] & 8'hF1; // this is what is normally seen for
                                            // unused address space in the atom due
                                            // to data bus capacitance and pull downs
