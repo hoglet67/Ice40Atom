@@ -372,7 +372,7 @@ module atom
    assign      pia_cs = (address[15:10] == 6'b101100);
    wire        pl8_cs = (address[15:10] == 6'b101101);
    wire        via_cs = (address[15:10] == 6'b101110);
-   wire        spi_cs = (address[15:10] == 6'b101111);
+   wire        spi_cs = (address[15:8]  == 8'b10111100);
    wire        ram_cs = (address[15]    == 1'b0) | rom_cs;
    wire        vid_cs = (address[15:13] == 3'b100);
 
