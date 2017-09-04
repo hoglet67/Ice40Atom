@@ -42,7 +42,7 @@ module opc6tb();
    reg         ps2_data;
    reg         cas_in;
 
-   integer     i, j;
+   integer     i, j, row, col;
 
 atom
   #(
@@ -63,6 +63,8 @@ atom
       .cas_in(cas_in),
       .ps2_clk(ps2_clk),
       .ps2_data(ps2_data),
+
+      .miso(1'b1),
 
       .RAMWE_b(ramwe_b),
       .RAMOE_b(ramoe_b),
@@ -114,7 +116,27 @@ atom
           end
       #1000 arm_ss = 1'b1;
 
-      #50000000 $finish; // 50ms, enough for a few video frames
+      #100000000 ; // 100ms, enough for a few video frames
+
+      // Attempt to dump the screen memory in ASCII
+      for (row = 0; row < 16; row = row + 1)
+        begin
+           for (col = 0; col < 32; col = col + 1)
+             begin
+                i = 'h8000 + 32 * row + col;
+                i = mem[i];
+                i = i & 127;                
+                if (i < 32)
+                  i = i + 64;
+                else if (i >= 64)
+                  i = 'h2e;
+                $write("%c", i);
+             end
+           $write("\n");
+        end
+
+      $finish;
+           
    end
 
    always
