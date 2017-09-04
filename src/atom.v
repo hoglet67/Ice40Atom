@@ -103,6 +103,7 @@ module atom
    wire [7:0]  spi_dout;
    wire [7:0]  via_dout;
    wire        via_irq_n;
+   wire [1:0]  turbo;
 
    // ===============================================================
    // System Clock generation (25MHz)
@@ -131,22 +132,49 @@ module atom
    // ===============================================================
 
    reg       cpu_clken;
+   reg       cpu_clken1;
    reg       via1_clken;
    reg       via4_clken;
    reg       wegate_b;
-   reg [4:0] clkdiv = 5'b00000;  // divider, from 25MHz down to 1MHz
+   reg [4:0] clkdiv = 5'b00000;  // divider, from 25MHz down to 1, 2, 4 or 8MHz
 
    always @(posedge clk25) begin
-     if (clkdiv == 24)
-       clkdiv <= 0;
-     else
-       clkdiv <= clkdiv + 1;
-     cpu_clken  <= (clkdiv == 24);
-     via1_clken <= (clkdiv == 24);
-     via4_clken <= (clkdiv == 6) | (clkdiv == 12) | (clkdiv == 18) || (clkdiv == 24);
-      // It's pretty arbitrary when in the cycle the write actually happens
-     wegate_b <= (clkdiv != 0);
+      if (clkdiv == 24)
+        clkdiv <= 0;
+      else
+        clkdiv <= clkdiv + 1;
+      case (turbo)
+        2'b00: // 1MHz
+          begin
+             cpu_clken  <= (clkdiv[3:0] == 0) & (clkdiv[4] == 0);
+             via1_clken <= (clkdiv[3:0] == 0) & (clkdiv[4] == 0);
+             via4_clken <= (clkdiv[1:0] == 0) & (clkdiv[4] == 0);
+          end
+        2'b01: // 2MHz
+          begin
+             cpu_clken  <= (clkdiv[2:0] == 0) & (clkdiv[4] == 0);
+             via1_clken <= (clkdiv[2:0] == 0) & (clkdiv[4] == 0);
+             via4_clken <= (clkdiv[0]   == 0) & (clkdiv[4] == 0);
+          end
+        2'b10: // 4MHz
+          begin
+             cpu_clken  <= (clkdiv[1:0] == 0) & (clkdiv[4] == 0);
+             via1_clken <= (clkdiv[1:0] == 0) & (clkdiv[4] == 0);
+             via4_clken <=                      (clkdiv[4] == 0);
+          end
+        2'b11: // 8MHz
+          begin
+             cpu_clken  <= (clkdiv[0]   == 0) & (clkdiv[4] == 0);
+             via1_clken <= (clkdiv[0]   == 0) & (clkdiv[4] == 0);
+             via4_clken <=                      (clkdiv[4] == 0);
+          end
+      endcase
+      cpu_clken1 <= cpu_clken;
    end
+
+   // Use opposite edge, so wegate sits in middle of window @ 8MHz
+   always @(negedge clk25)
+      wegate_b <= !cpu_clken1;
 
    // ===============================================================
    // Reset generation
@@ -197,7 +225,8 @@ module atom
       .SHIFT_OUT(shift_n),
       .CTRL_OUT(ctrl_n),
       .REPEAT_OUT(rept_n),
-      .BREAK_OUT(break_n)
+      .BREAK_OUT(break_n),
+      .TURBO(turbo)
       );
 
    // ===============================================================
