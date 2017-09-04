@@ -105,40 +105,48 @@ module atom
    wire        via_irq_n;
 
    // ===============================================================
-   // CPU Clock generation
+   // System Clock generation (25MHz)
    // ===============================================================
 
    reg [1:0]  clkpre = 2'b00;     // prescaler, from 100MHz to 25MHz
-   reg [4:0]  clkdiv = 5'b00000;  // divider, from 25MHz down to 1MHz
+
    always @(posedge clk100)
      begin
         clkpre <= clkpre + 1;
-        if (clkpre == 'b0)
-          if (clkdiv == 24)
-            clkdiv = 0;
-          else
-            clkdiv = clkdiv + 1;
      end
-
-   wire clk_cpu = clkdiv[4];
-
-   wire via1_clken = !clk_cpu;
-   wire via4_clken = (clkdiv == 6) | (clkdiv == 12) | (clkdiv == 18) || (clkdiv == 24);
-   
-   // It's pretty arbitrary when in the cycle the write actually happens
-   wire wegate_b = (clkdiv != 0);
+   wire clk25 = clkpre[1];
 
    // ===============================================================
-   // Other Clock generation
+   // VGA Clock generation (25MHz/12.5MHz)
    // ===============================================================
 
-   wire clk_vga = clkpre[1];
+   wire clk_vga = clk25;
    reg  clk_vga_en = 0;
 
    always @(posedge clk_vga)
      clk_vga_en <= !clk_vga_en;
 
-   wire clk_spi = clk_vga_en;
+   // ===============================================================
+   // Clock Enable Generation
+   // ===============================================================
+
+   reg       cpu_clken;
+   reg       via1_clken;
+   reg       via4_clken;
+   reg       wegate_b;
+   reg [4:0] clkdiv = 5'b00000;  // divider, from 25MHz down to 1MHz
+
+   always @(posedge clk25) begin
+     if (clkdiv == 24)
+       clkdiv <= 0;
+     else
+       clkdiv <= clkdiv + 1;
+     cpu_clken  <= (clkdiv == 24);
+     via1_clken <= (clkdiv == 24);
+     via4_clken <= (clkdiv == 6) | (clkdiv == 12) | (clkdiv == 18) || (clkdiv == 24);
+      // It's pretty arbitrary when in the cycle the write actually happens
+     wegate_b <= (clkdiv != 0);
+   end
 
    // ===============================================================
    // Reset generation
@@ -147,11 +155,14 @@ module atom
    reg [9:0] pwr_up_reset_counter = 0; // hold reset low for ~1ms
    wire      pwr_up_reset_n = &pwr_up_reset_counter;
 
-   always @(posedge clk_cpu)
+   always @(posedge clk25)
      begin
-        if (!pwr_up_reset_n)
-          pwr_up_reset_counter <= pwr_up_reset_counter + 1;
-        hard_reset_n <= sw4 & pwr_up_reset_n;
+        if (cpu_clken)
+          begin
+             if (!pwr_up_reset_n)
+               pwr_up_reset_counter <= pwr_up_reset_counter + 1;
+             hard_reset_n <= sw4 & pwr_up_reset_n;
+          end
      end
 
    wire reset = !hard_reset_n | !break_n | booting;
@@ -177,7 +188,7 @@ module atom
 
    keyboard KBD
      (
-      .CLK(clk_vga),
+      .CLK(clk25),
       .nRESET(hard_reset_n),
       .PS2_CLK(ps2_clk),
       .PS2_DATA(ps2_data),
@@ -200,14 +211,17 @@ module atom
    reg        cas_tone = 1'b0;
    reg [7:0]  cas_div = 0;
 
-   always @(posedge clk_cpu)
-     if (cas_div == 207)
+   always @(posedge clk25)
+     if (cpu_clken)
        begin
-          cas_div <= 0;
-          cas_tone = !cas_tone;
+          if (cas_div == 207)
+            begin
+               cas_div <= 0;
+               cas_tone <= !cas_tone;
+            end
+          else
+            cas_div <= cas_div + 1;
        end
-     else
-       cas_div <= cas_div + 1;
 
    assign sound = pia_pc[2];
 
@@ -309,14 +323,17 @@ module atom
    wire [7:0] pia_pb   = { shift_n, ctrl_n, keyout };
    assign pia_pc   = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
 
-   always @(posedge clk_cpu)
+   always @(posedge clk25)
      begin
-        if (pia_cs && !rnw)
-          case (address[1:0])
-            2'b00: pia_pa_r <= cpu_dout;
-            2'b10: pia_pc_r <= cpu_dout[3:0];
-            2'b11: if (!cpu_dout[7]) pia_pc_r[cpu_dout[2:1]] <= cpu_dout[0];
-          endcase
+        if (cpu_clken)
+          begin
+             if (pia_cs && !rnw)
+               case (address[1:0])
+                 2'b00: pia_pa_r <= cpu_dout;
+                 2'b10: pia_pc_r <= cpu_dout[3:0];
+                 2'b11: if (!cpu_dout[7]) pia_pc_r[cpu_dout[2:1]] <= cpu_dout[0];
+               endcase
+          end
      end
 
    always @(*)
@@ -343,7 +360,7 @@ module atom
    // Arlet's 6502 core is one of the smallest available
    cpu CPU
      (
-      .clk(clk_cpu),
+      .clk(clk25),
       .reset(reset),
       .AB(address_c),
       .DI(cpu_din),
@@ -351,23 +368,27 @@ module atom
       .WE(rnw_c),
       .IRQ(!via_irq_n),
       .NMI(1'b0),
-      .RDY(1'b1)
+      .RDY(cpu_clken)
       );
 
    // The outputs of Arlets's 6502 core need registing
-   always @(posedge clk_cpu)
+   always @(posedge clk25)
      begin
-        address  <= address_c;
-        cpu_dout <= cpu_dout_c;
-        rnw      <= !rnw_c;
+        if (cpu_clken)
+          begin
+             address  <= address_c;
+             cpu_dout <= cpu_dout_c;
+             rnw      <= !rnw_c;
+          end
      end
+
 
    // ===============================================================
    // Address decoding logic and data in multiplexor
    // ===============================================================
 
    wire [7:0]  pl8_dout = 8'b0;
-   
+
    wire        rom_cs = (address[15:14] == 2'b11);
    assign      pia_cs = (address[15:10] == 6'b101100);
    wire        pl8_cs = (address[15:10] == 6'b101101);
@@ -421,18 +442,18 @@ module atom
       .I_P2_H(via1_clken),
       .RESET_L(!reset),
       .ENA_4(via4_clken),
-      .CLK(clk_vga)
+      .CLK(clk25)
       );
-   
+
    // ===============================================================
    // SD Card Interface
    // ===============================================================
 
    spi SPI
      (
-      .clk(clk_spi),
+      .clk(clk25),
       .reset(reset),
-      .enable(spi_cs),
+      .enable(spi_cs & cpu_clken),
       .rnw(rnw),
       .addr(address[2:0]),
       .din(cpu_dout),
@@ -458,7 +479,7 @@ module atom
    VID_RAM
      (
       // Port A
-      .clk_a(!clk_cpu),    // Clock of negative edge to mask register latency
+      .clk_a(clk25),
       .we_a(we_a),
       .addr_a(address[12:0]),
       .din_a(cpu_dout),
