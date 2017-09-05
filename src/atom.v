@@ -77,7 +77,7 @@ module atom
    reg         hard_reset_n;
    wire        booting;
    wire        break_n;
-   reg [7:0]   pia_pa_r = 8'b00000000;
+   reg [7:0]   pia_pa_r = 8'h00;
    reg         rnw;
    wire [7:0]  pia_pc;
    wire        pia_cs;
@@ -355,16 +355,21 @@ module atom
    // This model is still very crude, specifically the directions of
    // the ports are fixed (not normally a problem on the Atom)
 
-   wire        fs_n;
+   wire       fs_n;
    reg [7:0]  pia_dout;
-   reg [3:0]  pia_pc_r = 4'b0000;
+   reg [3:0]  pia_pc_r = 4'h0;
    wire [7:0] pia_pa   = { pia_pa_r };
    wire [7:0] pia_pb   = { shift_n, ctrl_n, keyout };
-   assign pia_pc   = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
+   assign     pia_pc   = { fs_n, rept_n, cas_in, cas_tone, pia_pc_r};
 
-   always @(posedge clk25)
+   always @(posedge clk25 or posedge reset)
      begin
-        if (cpu_clken)
+        if (reset)
+          begin
+             pia_pa_r <= 8'h00;
+             pia_pc_r <=  4'h0;
+          end
+        else if (cpu_clken)
           begin
              if (pia_cs && !rnw)
                case (address[1:0])
@@ -541,12 +546,14 @@ module atom
    wire        an_s     = vid_data[6]; // See Atom schematic
    wire [10:0] char_a;
    wire [7:0]  char_d;
+   wire [8:0]  packed_char_a;
+   wire [7:0]  packed_char_d;
 
    mc6847 VDG
      (
       .clk(clk_vga),
       .clk_ena(clk_vga_en),
-      .reset(reset),
+      .reset(!hard_reset_n),
       .da0(),
       .videoaddr(vid_addr),
       .dd(vid_data),
@@ -579,8 +586,12 @@ module atom
    CHARROM
      (
       .clk(clk_vga),
-      .address(char_a),
-      .dout(char_d)
+      .address(packed_char_a),
+      .dout(packed_char_d)
       );
+
+   assign packed_char_a[8:3] = char_a[9:4];
+   assign packed_char_a[2:0] = char_a[3:0] - 2'b11;
+   assign char_d = (char_a[3:0] < 3 || char_a[3:0] > 10) ? 8'h00 : packed_char_d;
 
 endmodule
