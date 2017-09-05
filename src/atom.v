@@ -28,31 +28,16 @@ module atom
              // Main clock, 100MHz
              input         clk100,
              // ARM SPI slave, to bootstrap load the ROMS
-             input         arm_ss,
-             input         arm_sclk,
-             input         arm_mosi,
+             inout         arm_ss,
+             inout         arm_sclk,
+             inout         arm_mosi,
              output        arm_miso,
              // SD Card SPI master
              output        ss,
              output        sclk,
              output        mosi,
              input         miso,
-             // Test outputs
-             output        test0,
-             output        test1,
-             output        test2,
-             output        test3,
-             // LEDs
-             //output        led1,
-             //output        led2,
-             //output        led3,
-             //output        led4,
              // Switches
-             //input         sw1_1,
-             //input         sw1_2,
-             //input         sw2_1,
-             //input         sw2_2,
-             //input         sw3,
              input         sw4,
              // External RAM
              output        RAMWE_b,
@@ -196,15 +181,6 @@ module atom
    wire reset = !hard_reset_n | !break_n | booting;
 
    // ===============================================================
-   // LEDs
-   // ===============================================================
-
-   //assign led1 = reset;    // blue
-   //assign led2 = 1'b1;     // green
-   //assign led3 = 1'b0;     // yellow
-   //assign led4 = 1'b0;     // red
-
-   // ===============================================================
    // Keyboard
    // ===============================================================
 
@@ -228,6 +204,15 @@ module atom
       .BREAK_OUT(break_n),
       .TURBO(turbo)
       );
+
+   // ===============================================================
+   // LEDs
+   // ===============================================================
+
+   wire led1 = pia_pc[3];  // blue    - indicates alt colour set active
+   wire led2 = !ss;        // green   - indicates SD card activity
+   wire led3 = !rept_n;    // yellow  - indicates rept key pressed
+   wire led4 = reset;      // red     - indicates reset active
 
    // ===============================================================
    // Cassette
@@ -262,7 +247,6 @@ module atom
    // Bootstrap (of ROM content from ARM into RAM )
    // ===============================================================
 
-
    wire        atom_RAMCS_b = 1'b0;
    wire        atom_RAMOE_b = !rnw;
    wire        atom_RAMWE_b = rnw  | wegate_b | wemask;
@@ -275,7 +259,10 @@ module atom
    wire [17:0] ext_RAMA;
    wire [7:0]  ext_RAMDin;
 
-   wire        progress;
+   wire        arm_ss_int;
+   wire        arm_mosi_int;
+   wire        arm_miso_int;
+   wire        arm_sclk_int;
 
    bootstrap
      #(
@@ -286,12 +273,12 @@ module atom
      (
       .clk(clk100),
       .booting(booting),
-      .progress(progress),
+      .progress(),
       // SPI Slave Interface (runs at 20MHz)
-      .SCK(arm_sclk),
-      .SSEL(arm_ss),
-      .MOSI(arm_mosi),
-      .MISO(arm_miso),
+      .SCK(arm_sclk_int),
+      .SSEL(arm_ss_int),
+      .MOSI(arm_mosi_int),
+      .MISO(arm_miso_int),
       // RAM from Atom
       .atom_RAMCS_b(atom_RAMCS_b),
       .atom_RAMOE_b(atom_RAMOE_b),
@@ -306,10 +293,30 @@ module atom
       .ext_RAMDin(ext_RAMDin)
    );
 
-   assign test0 = arm_ss;
-   assign test1 = arm_sclk;
-   assign test2 = arm_mosi;
-   assign test3 = progress;
+   // ===============================================================
+   // ARM SPI Port / LED multiplexor
+   // ===============================================================
+
+   // FPGA -> ARM signals
+   assign arm_miso = booting ? arm_miso_int : led2;
+
+   // ARM -> FPGA signals
+`ifdef use_sb_io
+   SB_IO
+     #(
+       .PIN_TYPE(6'b 1010_01)
+       )
+   arm_spi_pins [2:0]
+     (
+      .PACKAGE_PIN({arm_ss, arm_mosi, arm_sclk}),
+      .OUTPUT_ENABLE(!booting),
+      .D_OUT_0({led1, led3, led4}),
+      .D_IN_0({arm_ss_int, arm_mosi_int, arm_sclk_int})
+      );
+`else
+   assign {arm_ss, arm_mosi, arm_sclk} = booting ? 3'bZ : {led1, led2, led4};
+   assign {arm_ss_int, arm_mosi_int, arm_sclk_int} = {arm_ss, arm_mosi, arm_sclk};
+`endif
 
    // ===============================================================
    // External RAM
@@ -325,14 +332,17 @@ module atom
    wire [7:0] data_pins_in;
    wire [7:0] data_pins_out = ext_RAMDin;
    wire       data_pins_out_en = !ext_RAMWE_b;
-   SB_IO #(
-           .PIN_TYPE(6'b 1010_01)
-           ) sram_data_pins [7:0] (
-                                   .PACKAGE_PIN(DAT),
-                                   .OUTPUT_ENABLE(data_pins_out_en),
-                                   .D_OUT_0(data_pins_out),
-                                   .D_IN_0(data_pins_in)
-                                   );
+   SB_IO
+     #(
+       .PIN_TYPE(6'b 1010_01)
+       )
+   sram_data_pins [7:0]
+     (
+      .PACKAGE_PIN(DAT),
+      .OUTPUT_ENABLE(data_pins_out_en),
+      .D_OUT_0(data_pins_out),
+      .D_IN_0(data_pins_in)
+      );
 `else
    assign DAT = (ext_RAMWE_b) ? 8'bz : ext_RAMDin;
    wire [7:0] data_pins_in = DAT;

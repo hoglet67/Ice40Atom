@@ -10,16 +10,10 @@ set_io arm_mosi 68 # also LED3
 set_io arm_sclk 70 # also LED4
 
 # Test
-set_io test0 106 # PMOD23 PMOD 5/6 pin  6
-set_io test1 110 # PMOD22 PMOD 5/6 pin  8
-set_io test2 113 # PMOD21 PMOD 5/6 pin 10
-set_io test3 144 # PMOD20 PMOD 5/6 pin 12
-
-# LEDs (active high)
-#set_io led1     71
-#set_io led2     67
-#set_io led3     68
-#set_io led4     70
+#set_io test0 106 # PMOD23 PMOD 5/6 pin  6
+#set_io test1 110 # PMOD22 PMOD 5/6 pin  8
+#set_io test2 113 # PMOD21 PMOD 5/6 pin 10
+#set_io test3 144 # PMOD20 PMOD 5/6 pin 12
 
 # SD Card
 set_io ss       38 # DIG18
