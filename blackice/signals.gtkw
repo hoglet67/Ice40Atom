@@ -10,46 +10,46 @@
 [size] 1855 1176
 [pos] 65 0
 *-23.000000 1230015 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] opc6tb.
-[treeopen] opc6tb.DUT.
-[treeopen] opc6tb.DUT.CPU.
+[treeopen] atom_tb.
+[treeopen] atom_tb.DUT.
+[treeopen] atom_tb.DUT.CPU.
 [sst_width] 223
 [signals_width] 142
 [sst_expanded] 1
 [sst_vpaned_height] 355
 @28
-opc6tb.DUT.clk100
-opc6tb.DUT.clkpre[1:0]
+atom_tb.DUT.clk100
+atom_tb.DUT.clkpre[1:0]
 @22
-opc6tb.DUT.clkdiv[4:0]
+atom_tb.DUT.clkdiv[4:0]
 @28
-opc6tb.DUT.clk_cpu
-opc6tb.DUT.clk_spi
-opc6tb.DUT.clk_vga
-opc6tb.DUT.pwr_up_reset_n
-opc6tb.DUT.hard_reset_n
-opc6tb.DUT.reset
-opc6tb.arm_mosi
-opc6tb.arm_sclk
-opc6tb.arm_ss
-opc6tb.DUT.booting
-opc6tb.DUT.BS.state[2:0]
-opc6tb.DUT.BS.byte_received
-opc6tb.DUT.BS.bitcnt[2:0]
+atom_tb.DUT.clk_cpu
+atom_tb.DUT.clk_spi
+atom_tb.DUT.clk_vga
+atom_tb.DUT.pwr_up_reset_n
+atom_tb.DUT.hard_reset_n
+atom_tb.DUT.reset
+atom_tb.arm_mosi
+atom_tb.arm_sclk
+atom_tb.arm_ss
+atom_tb.DUT.booting
+atom_tb.DUT.BS.state[2:0]
+atom_tb.DUT.BS.byte_received
+atom_tb.DUT.BS.bitcnt[2:0]
 @22
-opc6tb.DUT.address[15:0]
+atom_tb.DUT.address[15:0]
 @28
-opc6tb.DUT.rnw
+atom_tb.DUT.rnw
 @22
-opc6tb.DUT.cpu_din[7:0]
-opc6tb.DUT.cpu_dout[7:0]
+atom_tb.DUT.cpu_din[7:0]
+atom_tb.DUT.cpu_dout[7:0]
 @28
-opc6tb.DUT.clk_vga
-opc6tb.r_msb
-opc6tb.g_msb
-opc6tb.b_msb
-opc6tb.hsync
-opc6tb.vsync
-opc6tb.DUT.vid_cs
+atom_tb.DUT.clk_vga
+atom_tb.r_msb
+atom_tb.g_msb
+atom_tb.b_msb
+atom_tb.hsync
+atom_tb.vsync
+atom_tb.DUT.vid_cs
 [pattern_trace] 1
 [pattern_trace] 0
