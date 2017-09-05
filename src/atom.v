@@ -89,6 +89,7 @@ module atom
    wire [7:0]  via_dout;
    wire        via_irq_n;
    wire [1:0]  turbo;
+   reg         lock;
 
    // ===============================================================
    // System Clock generation (25MHz)
@@ -211,7 +212,7 @@ module atom
 
    wire led1 = pia_pc[3];  // blue    - indicates alt colour set active
    wire led2 = !ss;        // green   - indicates SD card activity
-   wire led3 = !rept_n;    // yellow  - indicates rept key pressed
+   wire led3 = lock;       // yellow  - indicates rept key pressed
    wire led4 = reset;      // red     - indicates reset active
 
    // ===============================================================
@@ -426,6 +427,13 @@ module atom
           end
      end
 
+   // Snoop bit 5 of #E7 (the lock flag)
+   always @(posedge clk25 or posedge reset)
+     if (reset)
+       lock <= 1'b0;
+     else if (cpu_clken)
+       if ((address == 16'he7) && !rnw)
+         lock <= cpu_dout[5];
 
    // ===============================================================
    // Address decoding logic and data in multiplexor
