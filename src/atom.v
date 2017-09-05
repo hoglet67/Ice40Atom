@@ -185,18 +185,20 @@ module atom
    // Keyboard
    // ===============================================================
 
-   wire rept_n;
-   wire shift_n;
-   wire ctrl_n;
+   wire       rept_n;
+   wire       shift_n;
+   wire       ctrl_n;
    wire [3:0] row = pia_pa_r[3:0];
    wire [5:0] keyout;
+   wire       ps2_clk_int;
+   wire       ps2_data_int;
 
    keyboard KBD
      (
       .CLK(clk25),
       .nRESET(hard_reset_n),
-      .PS2_CLK(ps2_clk),
-      .PS2_DATA(ps2_data),
+      .PS2_CLK(ps2_clk_int),
+      .PS2_DATA(ps2_data_int),
       .KEYOUT(keyout),
       .ROW(row),
       .SHIFT_OUT(shift_n),
@@ -205,6 +207,19 @@ module atom
       .BREAK_OUT(break_n),
       .TURBO(turbo)
       );
+
+`ifdef use_sb_io
+    SB_IO #(
+        .PIN_TYPE(6'b0000_01),
+        .PULLUP(1'b1)
+    ) ps2_io [1:0] (
+        .PACKAGE_PIN({ps2_clk, ps2_data}),
+        .D_IN_0({ps2_clk_int, ps2_data_int})
+    );
+`else
+   assign ps2_clk_int = ps2_clk;
+   assign ps2_data_int = ps2_data;
+`endif
 
    // ===============================================================
    // LEDs
