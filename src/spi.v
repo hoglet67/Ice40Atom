@@ -43,7 +43,7 @@ module spi
    reg [4:0] state;
    reg [7:0] serial_out;
    reg [7:0] serial_in;
-   reg [12:0] count;
+   reg [17:0] count;
 
 //------------------------------------------------------------
 // Process Copies SPI port word to appropriate ctrl register
@@ -63,7 +63,7 @@ module spi
           begin             
              if (state == `spi_init)
                begin
-                  if (count == 5663) // 88 * 64 + 31
+                  if (count == 180255) // 32 * 88 * 64 + 31
                     begin
                        state <= `spi_s0;
                        sclk  <= 1'b0;
