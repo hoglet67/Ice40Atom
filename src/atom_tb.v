@@ -1,6 +1,6 @@
 `timescale 1ns / 1ns
 
-module opc6tb();
+module atom_tb();
 
    parameter   CHARROM_INIT_FILE = "../mem/charrom.mem";
    parameter   VID_RAM_INIT_FILE = "../mem/vid_ram.mem";
@@ -153,6 +153,13 @@ atom
 
    always
      #5 clk = !clk;
+
+   always @(posedge DUT.clk25)
+     if (DUT.cpu_clken && !DUT.reset)
+       if (DUT.rnw)
+         $display("Rd: %04x = %02x", DUT.address, DUT.cpu_din);
+       else
+         $display("Wr: %04x = %02x", DUT.address, DUT.cpu_dout);
 
    assign data_in = data;
    assign data = (!ramcs_b && !ramoe_b && ramwe_b) ? data_out : 8'hZZ;
