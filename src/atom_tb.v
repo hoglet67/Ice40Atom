@@ -34,15 +34,25 @@ module opc6tb();
    wire        g_msb  = green[3];
    wire        b_msb  = blue[3];
 
-   reg         arm_ss;
-   reg         arm_sclk;
-   reg         arm_mosi;
+   reg         arm_ss_r;
+   reg         arm_sclk_r;
+   reg         arm_mosi_r;
+
+   reg         booting;
+
+   wire        arm_ss;
+   wire        arm_sclk;
+   wire        arm_mosi;
 
    reg         ps2_clk;
    reg         ps2_data;
    reg         cas_in;
 
    integer     i, j, row, col;
+
+   assign arm_ss   = booting ? arm_ss_r   : 1'bZ;
+   assign arm_sclk = booting ? arm_sclk_r : 1'bZ;
+   assign arm_mosi = booting ? arm_mosi_r : 1'bZ;
 
 atom
   #(
@@ -98,11 +108,12 @@ atom
 
       // load the boot image at 20MHz (should take 6ms for 16KB)
       $readmemh(BOOT_INIT_FILE, boot);
-      arm_ss   = 1'b1;
-      arm_sclk = 1'b1;
-      arm_mosi = 1'b1;
+      booting    = 1'b1;
+      arm_ss_r   = 1'b1;
+      arm_sclk_r = 1'b1;
+      arm_mosi_r = 1'b1;
       // start the boot spi transfer by lowering ss
-      #1000 arm_ss = 1'b0;
+      #1000 arm_ss_r = 1'b0;
       // wait ~1us longer (as this is what the arm does)
       #1000;
       // start sending the data (MSB first)
@@ -110,11 +121,12 @@ atom
       for (i = 0; i <= BOOT_END_ADDR - BOOT_START_ADDR; i = i + 1)
         for (j = 7; j >= 0; j = j - 1)
           begin
-             #25 arm_sclk = 1'b0;
-             arm_mosi = boot[i][j];
-             #25 arm_sclk = 1'b1;
+             #25 arm_sclk_r = 1'b0;
+             arm_mosi_r = boot[i][j];
+             #25 arm_sclk_r = 1'b1;
           end
-      #1000 arm_ss = 1'b1;
+      #1000 arm_ss_r = 1'b1;
+      #1000 booting  = 1'b0;
 
       #100000000 ; // 100ms, enough for a few video frames
 
@@ -125,7 +137,7 @@ atom
              begin
                 i = 'h8000 + 32 * row + col;
                 i = mem[i];
-                i = i & 127;                
+                i = i & 127;
                 if (i < 32)
                   i = i + 64;
                 else if (i >= 64)
@@ -136,7 +148,7 @@ atom
         end
 
       $finish;
-           
+
    end
 
    always
