@@ -7,10 +7,11 @@ module atom_tb();
 
    // This is used to simulate the ARM downloaded the initial set of ROM images
    parameter   BOOT_INIT_FILE    = "../mem/boot_c000_ffff.mem";
-
    parameter   BOOT_START_ADDR   = 'h0C000;
    parameter   BOOT_END_ADDR     = 'h0FFFF;
 
+   reg [23:0]  boot_start = BOOT_START_ADDR;
+   reg [23:0]  boot_end   = BOOT_END_ADDR;
    reg [7:0]   boot [ 0 : BOOT_END_ADDR - BOOT_START_ADDR ];
 
    reg [17:0]  mem [ 0:262143 ];
@@ -54,12 +55,22 @@ module atom_tb();
    assign arm_sclk = booting ? arm_sclk_r : 1'bZ;
    assign arm_mosi = booting ? arm_mosi_r : 1'bZ;
 
+   // send a byte over SPI (MSB first)
+   // data changes on falling edge of clock and is samples on rising edges
+   task spi_send_byte;
+      input [7:0] byte;
+      for (j = 7; j >= 0; j = j - 1)
+        begin
+           #25 arm_sclk_r = 1'b0;
+           arm_mosi_r = byte[j];
+           #25 arm_sclk_r = 1'b1;
+        end
+   endtask
+
 atom
   #(
     .CHARROM_INIT_FILE (CHARROM_INIT_FILE),
-    .VID_RAM_INIT_FILE (VID_RAM_INIT_FILE),
-    .BOOT_START_ADDR(BOOT_START_ADDR),
-    .BOOT_END_ADDR(BOOT_END_ADDR)
+    .VID_RAM_INIT_FILE (VID_RAM_INIT_FILE)
     )
    DUT
      (
@@ -116,15 +127,19 @@ atom
       #1000 arm_ss_r = 1'b0;
       // wait ~1us longer (as this is what the arm does)
       #1000;
-      // start sending the data (MSB first)
-      // data changes on falling edge of clock and is samples on rising edges
+
+      // send the ROM image start address
+      spi_send_byte(boot_start[ 7: 0]);
+      spi_send_byte(boot_start[15: 8]);
+      spi_send_byte(boot_start[23:16]);
+      // send the ROM image end address
+      spi_send_byte(boot_end[ 7: 0]);
+      spi_send_byte(boot_end[15: 8]);
+      spi_send_byte(boot_end[23:16]);
+      // send the ROM image data
       for (i = 0; i <= BOOT_END_ADDR - BOOT_START_ADDR; i = i + 1)
-        for (j = 7; j >= 0; j = j - 1)
-          begin
-             #25 arm_sclk_r = 1'b0;
-             arm_mosi_r = boot[i][j];
-             #25 arm_sclk_r = 1'b1;
-          end
+        spi_send_byte(boot[i]);
+
       #1000 arm_ss_r = 1'b1;
       #1000 booting  = 1'b0;
 

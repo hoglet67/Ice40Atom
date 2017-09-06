@@ -66,8 +66,6 @@ module atom
 
    parameter CHARROM_INIT_FILE = "../mem/charrom.mem";
    parameter VID_RAM_INIT_FILE = "../mem/vid_ram.mem";
-   parameter BOOT_START_ADDR   = 'h0C000;
-   parameter BOOT_END_ADDR     = 'h0FFFF;
 
    // ===============================================================
    // Wires/Reg definitions
@@ -280,12 +278,7 @@ module atom
    wire        arm_miso_int;
    wire        arm_sclk_int;
 
-   bootstrap
-     #(
-       .BOOT_START_ADDR(BOOT_START_ADDR),
-       .BOOT_END_ADDR(BOOT_END_ADDR)
-       )
-   BS
+   bootstrap BS
      (
       .clk(clk100),
       .booting(booting),
@@ -454,6 +447,20 @@ module atom
    // Address decoding logic and data in multiplexor
    // ===============================================================
 
+   // 0000-7FFF RAM       ( 32KB)
+   // 8000-97FF Video RAM (  6KB)
+   // 9800-9FFF RAM       (  2KB)
+   // A000-AFFF RAM       (  4KB) (for Utility ROMs)
+   // B000-B3FF 8255 PIA  (  1KB)
+   // B400-B7FF empty     (  1KB) (returns 00)
+   // B800-BBFF 6522 VIA  (  1KB)
+   // BC00-BCFF SPI       ( 256B)
+   // BD00-BFFF empty     ( 768B) (returns BD, BE, BF)
+   // C000-CFFF Basic ROM (  4KB)
+   // D000-DFFF FP ROM    (  4KB)
+   // E000-EFFF SDDOS ROM (  4KB)
+   // F000-FFFF MOS ROM   (  4KB)
+
    wire [7:0]  pl8_dout = 8'b0;
 
    wire        rom_cs = (address[15:14] == 2'b11);
@@ -461,8 +468,8 @@ module atom
    wire        pl8_cs = (address[15:10] == 6'b101101);
    wire        via_cs = (address[15:10] == 6'b101110);
    wire        spi_cs = (address[15:8]  == 8'b10111100);
-   wire        ram_cs = (address[15]    == 1'b0) | rom_cs;
-   wire        vid_cs = (address[15:13] == 3'b100);
+   wire        ram_cs = (address[15]    == 1'b0) | (address[15:12] == 4'b1010) | (address[15:11] == 5'b10011) | rom_cs;
+   wire        vid_cs = (address[15:12] == 4'b1000) | (address[15:11] == 5'b10010);
 
    assign      wemask = rom_cs;
 

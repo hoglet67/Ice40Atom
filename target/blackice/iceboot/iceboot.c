@@ -8,9 +8,11 @@
 #include "usbd_cdc_if.h"
 #include "stm32l4xx_hal.h"
 #include "errno.h"
-#include "atom_roms.h"
 
-#define VER "0.34 Ice40Atom"
+#include "atom_roms.h"
+#define  ATOM_ROMS_START 0x00A000
+
+#define VER "0.35 Ice40Atom"
 
 enum { FLASH_ICE40_START = 0x0801F000, FLASH_ICE40_END = 0x08040000 };
 enum { OK, TIMEOUT, ICE_ERROR };
@@ -493,11 +495,16 @@ char tohexdigit(int i) {
 }
 
 void send_atom_roms() {
+   uint32_t start = ATOM_ROMS_START;
+   uint32_t end   = ATOM_ROMS_START + atom_roms_bin_len - 1;
+
 	// Additional code to send the Atom ROMs (16KB total)
 	gpio_high(ICE40_SPI_CS);
 	HAL_Delay(100);
 	uart_puts("Sending Atom ROMS\n");
 	gpio_low(ICE40_SPI_CS);
+	spi_write((uint8_t *)&start, 3);
+	spi_write((uint8_t *)&end, 3);
 	spi_write(&atom_roms_bin[0], atom_roms_bin_len);
 	gpio_high(ICE40_SPI_CS);
 	uart_puts("Done\n");
