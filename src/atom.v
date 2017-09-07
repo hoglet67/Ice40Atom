@@ -261,16 +261,16 @@ module atom
    // ROM Latch at BFFF
    // ===============================================================
 
-   reg [2:0]   rom_latch;
+   reg [7:0]   rom_latch;
    wire        rom_latch_cs;
    wire        a000_cs;
 
    always @(posedge clk25 or posedge reset)
      if (reset)
-       rom_latch <= 3'b0;
+       rom_latch <= 8'h00;
      else if (cpu_clken)
        if (rom_latch_cs & !rnw)
-         rom_latch <= cpu_dout[2:0];
+         rom_latch <= cpu_dout;
 
    // ===============================================================
    // Bootstrap (of ROM content from ARM into RAM )
@@ -279,7 +279,7 @@ module atom
    wire        atom_RAMCS_b = 1'b0;
    wire        atom_RAMOE_b = !rnw;
    wire        atom_RAMWE_b = rnw  | wegate_b | wemask;
-   wire [17:0] atom_RAMA    = a000_cs ? { 2'b01, 1'b0, rom_latch, address[11:0] } :
+   wire [17:0] atom_RAMA    = a000_cs ? { 3'b010, rom_latch[2:0], address[11:0] } :
                                         { 2'b00, address };
    wire [7:0]  atom_RAMDin  = cpu_dout;
 
@@ -493,11 +493,12 @@ module atom
 
    assign      wemask = rom_cs;
 
-   assign cpu_din = vid_cs   ? vid_dout :
-                    pia_cs   ? pia_dout :
-                    pl8_cs   ? pl8_dout :
-                    spi_cs   ? spi_dout :
-                    via_cs   ? via_dout :
+   assign cpu_din = vid_cs   ? vid_dout  :
+                    pia_cs   ? pia_dout  :
+                    pl8_cs   ? pl8_dout  :
+                    spi_cs   ? spi_dout  :
+                    via_cs   ? via_dout  :
+              rom_latch_cs   ? rom_latch :
                                data_pins_in;
 
    // ===============================================================
