@@ -16,18 +16,23 @@
 ;D4BD: 4C 01 A0  JMP #A002    D4BD: 4C 02 A0  JMP #A002
 ;D4C0: 4C 05 E0  JMP #E005    D4C3: 4C 12 B0  JMP #B012
 
+; Part 1 is $0202 bytes $B010-B211
+; Part 2 is $028f bytes $B410-B69e
+; Workspace is $00C2 bytes long
+
+
 ; *** Options ***
 
 LATCH           = $BFFF
-; SHADOW        = $FD
-SHADOW          = $BFFF           ; If $BFFF is write only otherwise SHADOW =$BFFF
+; SHADOW        = $FD           ; If $BFFF is write only otherwise SHADOW =$BFFF
+SHADOW          = $BFFF
 MAX             = $8
 ZPBASE          = $90
 ZPLENGTH        = $10
 
 ; *** Workarea ***
 
-BASE            = $400
+BASE            = $B300
 BRKLOW          = BASE
 BRKHIGH         = BRKLOW+1
 BRKROM          = BRKHIGH+1
@@ -59,6 +64,12 @@ TEXT            = $F7D1
 CR              = $D
 LF              = $A
 DELIM           = $EA
+
+.macro STA___LATCH
+.if (SHADOW <> LATCH)
+   sta   LATCH
+.endif
+.endmacro
 
 .SEGMENT "PAD1"
 
@@ -115,13 +126,13 @@ label1:
 next_box:
    inc   SHADOW                 ; switch to next rom
    lda   SHADOW
-   sta   LATCH
+   STA___LATCH
 
    cmp   #MAX                   ; if last reached, switch to rom 0
    bne   label2
    lda   #0
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
 label2:
    jsr   switch_context_in      ; restore zeropage
 
@@ -244,7 +255,7 @@ not_install:
 
    lda   BRKROM                 ; set start rom nr
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
 
    jsr   switch_context_in      ; restore zeropage
 
@@ -374,7 +385,7 @@ not_found:
 
    lda   BRKROM                 ; reset rom nr
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
 
    jsr   switch_context_in      ; restore zeropage
    ldx   #$ff
@@ -451,7 +462,7 @@ rom:
    and   #$f
    ora   #$40
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
 
    lda   $a000
    cmp   #$40
@@ -484,7 +495,7 @@ unlock:
    lda   SHADOW
    and   #$f
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
    jmp   $c55b
 
 ; *** table of commands ***
@@ -690,7 +701,7 @@ ijob:
 
    lda   VECTAB+2,x             ; reset rom nr
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
 
    lda   VECTAB,x               ; reset nmi/irq vector
    sta   INTVECTOR+1
@@ -715,7 +726,7 @@ ientry:
    jsr   isave                  ; save processor/register values
    pla  
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
    plp  
    lda   INT_STATUS2
    pha  
@@ -756,7 +767,7 @@ label40:
    sta   SUBVECTOR+1
    lda   VECTAB+2,x
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
    jsr   switch_context_in      ; restore zeropage
    jsr   load
    jsr   lb50
@@ -770,7 +781,7 @@ lb51:
    jsr   switch_context_out     ; store zeropage
    pla  
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
    jsr   switch_context_in      ; restore zeropage
 
    lda   OPT_PCHARME            ;**!!**
@@ -800,7 +811,7 @@ short_execution:
    pha  
    lda   VECTAB+2,x
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
    lda   VECTAB,x
    sta   SUBVECTOR+1
    lda   VECTAB+1,x
@@ -816,7 +827,7 @@ lb61:
    jsr   save
    pla  
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
 
    lda   OPT_PCHARME            ;**!!**
    sta   $60
@@ -829,7 +840,7 @@ switch_back:
    jsr   switch_context_out     ; store zeropage
    pla  
    sta   SHADOW
-   sta   LATCH
+   STA___LATCH
    jsr   switch_context_in      ; restore zeropage
    lda   #>handler              ; reinit break handler
    sta   BRKVEC+1
