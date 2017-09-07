@@ -10,7 +10,7 @@
 #include "errno.h"
 
 #include "atom_roms.h"
-#define  ATOM_ROMS_START 0x00A000
+#define  ATOM_ROMS_START 0x00B000
 
 #define VER "0.35 Ice40Atom"
 
@@ -505,7 +505,7 @@ void send_atom_roms() {
 	gpio_low(ICE40_SPI_CS);
 	spi_write((uint8_t *)&start, 3);
 	spi_write((uint8_t *)&end, 3);
-	spi_write(&atom_roms_bin[0], atom_roms_bin_len);
+	spi_write((uint8_t *)&atom_roms_bin[0], atom_roms_bin_len);
 	gpio_high(ICE40_SPI_CS);
 	uart_puts("Done\n");
 }

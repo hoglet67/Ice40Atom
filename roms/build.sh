@@ -50,4 +50,12 @@ cat $game zero zero zero zero zero zero $UTIL zero abasic.rom afloat.rom SDROM_F
 
 done
 
+# Build the larger image boot_a000_17fff that includes paged ROMs
+# This required a correctly formatted SD Card or you will see INTERFACE? on boot
+# (Ctrl-Break) will get you past this
+DIR=boot_b000_17fff
+mkdir -p $DIR
+cat bran_b010.rom abasic.rom afloat_patched_b010.rom SDROM_FPGA.rom akernel_patched.rom axr1.rom pcharme_v1.73.rom atomic_windows_v1.1.rom gags_v2.3.rom pp_toolkit.rom we_rom.rom fpgautil.rom zero > $DIR/atom_roms.bin
+(cd $DIR; xxd -i atom_roms.bin > atom_roms.h)
+
 ls -l */atom_roms.h

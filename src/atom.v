@@ -258,13 +258,29 @@ module atom
    assign cas_out = !(!(!cas_tone & pia_pc[1]) & pia_pc[0]);
 
    // ===============================================================
+   // ROM Latch at BFFF
+   // ===============================================================
+
+   reg [2:0]   rom_latch;
+   wire        rom_latch_cs;
+   wire        a000_cs;
+
+   always @(posedge clk25 or posedge reset)
+     if (reset)
+       rom_latch <= 3'b0;
+     else if (cpu_clken)
+       if (rom_latch_cs & !rnw)
+         rom_latch <= cpu_dout[2:0];
+
+   // ===============================================================
    // Bootstrap (of ROM content from ARM into RAM )
    // ===============================================================
 
    wire        atom_RAMCS_b = 1'b0;
    wire        atom_RAMOE_b = !rnw;
    wire        atom_RAMWE_b = rnw  | wegate_b | wemask;
-   wire [17:0] atom_RAMA    = { 2'b00, address };
+   wire [17:0] atom_RAMA    = a000_cs ? { 2'b01, 1'b0, rom_latch, address[11:0] } :
+                                        { 2'b00, address };
    wire [7:0]  atom_RAMDin  = cpu_dout;
 
    wire        ext_RAMCS_b;
@@ -447,41 +463,42 @@ module atom
    // Address decoding logic and data in multiplexor
    // ===============================================================
 
-   // 0000-7FFF RAM       ( 32KB)
-   // 8000-97FF Video RAM (  6KB)
-   // 9800-9FFF RAM       (  2KB)
-   // A000-AFFF RAM       (  4KB) (for Utility ROMs)
-   // B000-B3FF 8255 PIA  (  1KB)
-   // B400-B7FF empty     (  1KB) (returns 00)
-   // B800-BBFF 6522 VIA  (  1KB)
-   // BC00-BCFF SPI       ( 256B)
-   // BD00-BFFF empty     ( 768B) (returns BD, BE, BF)
-   // C000-CFFF Basic ROM (  4KB)
-   // D000-DFFF FP ROM    (  4KB)
-   // E000-EFFF SDDOS ROM (  4KB)
-   // F000-FFFF MOS ROM   (  4KB)
+   // 0000-7FFF RAM
+   // 8000-97FF Video RAM
+   // 9800-9FFF RAM
+   // A000-AFFF RAM
+   // B000-B00F 8255 PIA
+   // B010-B3FF BRAN ROM (part 1)
+   // B400-B40F empty (returns zero)
+   // B410-B7FF BRAN ROM (part 2)
+   // B800-B80F 6522 VIA
+   // B810-BBFF RAM
+   // BC00-BC0F SPI
+   // BC10-BCFF RAM
+   // C000-CFFF Basic ROM
+   // D000-DFFF FP ROM
+   // E000-EFFF SDDOS ROM
+   // F000-FFFF MOS ROM
 
    wire [7:0]  pl8_dout = 8'b0;
 
-   wire        rom_cs = (address[15:14] == 2'b11);
-   assign      pia_cs = (address[15:10] == 6'b101100);
-   wire        pl8_cs = (address[15:10] == 6'b101101);
-   wire        via_cs = (address[15:10] == 6'b101110);
-   wire        spi_cs = (address[15:8]  == 8'b10111100);
-   wire        ram_cs = (address[15]    == 1'b0) | (address[15:12] == 4'b1010) | (address[15:11] == 5'b10011) | rom_cs;
-   wire        vid_cs = (address[15:12] == 4'b1000) | (address[15:11] == 5'b10010);
+   wire         rom_cs = (address[15:14] == 2'b11);
+   assign       pia_cs = (address[15: 4] == 12'hb00);
+   wire         pl8_cs = (address[15: 4] == 12'hb40);
+   wire         via_cs = (address[15: 4] == 12'hb80);
+   wire         spi_cs = (address[15: 4] == 12'hbc0);
+   assign      a000_cs = (address[15:12] == 4'b1010);
+   wire         vid_cs = (address[15:12] == 4'b1000) | (address[15:11] == 5'b10010);
+   assign rom_latch_cs = (address        == 16'hbfff);
 
    assign      wemask = rom_cs;
 
-   assign cpu_din = ram_cs   ? data_pins_in :
-                    vid_cs   ? vid_dout :
+   assign cpu_din = vid_cs   ? vid_dout :
                     pia_cs   ? pia_dout :
                     pl8_cs   ? pl8_dout :
-                    via_cs   ? via_dout :
                     spi_cs   ? spi_dout :
-                    address[15:8] & 8'hF1; // this is what is normally seen for
-                                           // unused address space in the atom due
-                                           // to data bus capacitance and pull downs
+                    via_cs   ? via_dout :
+                               data_pins_in;
 
    // ===============================================================
    // 6522 VIA at 0xB8xx

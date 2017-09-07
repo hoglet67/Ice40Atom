@@ -1,0 +1,15 @@
+MEMORY
+{
+   ROM1:  start = $B000, size = $010, fill = yes, fillval = $00;
+   ROM2:  start = $B010, size = $3f0, fill = yes, fillval = $00;
+   ROM3:  start = $B400, size = $010, fill = yes, fillval = $00;
+   ROM4:  start = $B410, size = $bf0, fill = yes, fillval = $00;
+}
+
+SEGMENTS
+{
+   PAD1:     load = ROM1, type = ro;
+   BRAN1:    load = ROM2, type = ro;
+   PAD2:     load = ROM3, type = ro;
+   BRAN2:    load = ROM4, type = ro;
+}
