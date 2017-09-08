@@ -17,7 +17,7 @@ module sid_filters (
    output signed [18:0] sound,
    output               valid
 );
-   
+
 
    wire [3:0]          filt        = Res_Filt[3:0];
    wire [3:0]          res         = Res_Filt[7:4];
@@ -47,7 +47,7 @@ module sid_filters (
 
    initial
      begin
-        divmul[0] <= 1448;        
+        divmul[0] <= 1448;
         divmul[1] <= 1323;
         divmul[2] <= 1218;
         divmul[3] <= 1128;
@@ -69,18 +69,18 @@ module sid_filters (
    reg signed [17:0] mulb;
    reg signed [35:0] mulr;
    reg               mulen;
-   
+
    function signed [17:0] s13_to_18;
       input signed [12:0] a;
       s13_to_18 = { a[12], a[12], a[12], a[12], a[12], a};
    endfunction
-   
+
    always @(posedge clk)
      if (mulen)
        mulr <= mula * mulb;
 
    wire [10:0] fc = { Fc_hi , Fc_lo[2:0]};
-   
+
    sid_coeffs c
      (
       .clk(clk),
@@ -93,13 +93,13 @@ module sid_filters (
         begin
            r_done <= 1'b0;
            r_state <= 4'd0;
-           r_Vlp <= 0;           
-           r_Vbp <= 0;           
-           r_Vhp <= 0;           
+           r_Vlp <= 0;
+           r_Vbp <= 0;
+           r_Vhp <= 0;
         end
       else
         begin
-           
+
            mula <= 18'h0;
            mulb <= 18'h0;
            mulen <= 1'b0;
@@ -121,7 +121,7 @@ module sid_filters (
                begin
                   r_state <= 4'd2;
                   // already have W0 ready. Always positive
-                  r_w0 <= {2'b00 & val}; // TODO was signed???
+                  r_w0 <= {2'b00 & val};
                   // 1st accumulation
                   if (filt[0])
                     r_Vi <= r_Vi + s13_to_18(voice1);
@@ -142,7 +142,7 @@ module sid_filters (
                   mulb <= r_Vhp;
                   mulen <= 1'b1;
                end
-             
+
              4'd3:
                begin
                   r_state <= 4'd4;
@@ -169,7 +169,7 @@ module sid_filters (
                   r_dVlp <= { mulr[35] , mulr[35:19] };
                   r_Vbp <= r_Vbp - r_dVbp;
                   // Get Q, synchronous.
-                  r_q <= divmul[res]; // TODO: to_signed
+                  r_q <= divmul[res];
                end
 
              4'd5:
@@ -208,7 +208,7 @@ module sid_filters (
                   if (hp_bp_lp[2])
                     r_Vf <= r_Vf + r_Vhp;
                end
-             
+
              4'd9:
                begin
                   r_state <= 4'd10;
@@ -219,7 +219,7 @@ module sid_filters (
                begin
                   r_state <= 4'd11;
                   // Add mixer DC
-                  r_Vf <= r_Vf + mixer_DC; // TODO: to_signed
+                  r_Vf <= r_Vf + mixer_DC;
                end
 
              4'd11:
@@ -229,7 +229,7 @@ module sid_filters (
                   mulen <= 1'b1;
                   mula <= r_Vf;
                   mulb <= 0;
-                  mulb[3:0] <= volume; // TODO: to_signed
+                  mulb[3:0] <= volume;
                end
 
              4'd12:
@@ -239,7 +239,7 @@ module sid_filters (
                   r_vout[18] <= mulr[35];
                   r_vout[17:0] <= mulr[17:0];
                end
-            
+
            endcase
 
         end
