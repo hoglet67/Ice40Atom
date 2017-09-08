@@ -28,19 +28,13 @@ module bootstrap
    );
 
    // ===============================================================
-   // Atom ROM Start/End addresses
-   // ===============================================================
-
-   parameter     BOOT_START_ADDR = 'h0C000;
-   parameter     BOOT_END_ADDR   = 'h0FFFF;
-
-   // ===============================================================
    // Local registers
    // ===============================================================
 
    reg           boot_RAMWE_b;
    reg [17:0]    boot_RAMA;
    reg [7:0]     boot_RAMDin;
+   reg [17:0]    boot_ENDA;
 
    // ===============================================================
    // RAM Multiplexor (between the Atom and the boot Loader)
@@ -101,15 +95,21 @@ module bootstrap
    // Bootstrap state machine
    // ===============================================================
 
-`define st_idle          3'b000
-`define st_wait_for_byte 3'b001
-`define st_write_1       3'b010
-`define st_write_2       3'b011
-`define st_write_3       3'b100
-`define st_write_4       3'b101
-`define st_done          3'b110
+`define st_idle               4'h0
+`define st_wait_for_start_lo  4'h1
+`define st_wait_for_start_mid 4'h2
+`define st_wait_for_start_hi  4'h3
+`define st_wait_for_end_lo    4'h4
+`define st_wait_for_end_mid   4'h5
+`define st_wait_for_end_hi    4'h6
+`define st_wait_for_byte      4'h7
+`define st_write_1            4'h8
+`define st_write_2            4'h9
+`define st_write_3            4'hA
+`define st_write_4            4'hB
+`define st_done               4'hC
 
-   reg [2:0] state = `st_idle;
+   reg [3:0] state = `st_idle;
 
    always @(posedge clk)
      case (state)
@@ -117,10 +117,45 @@ module bootstrap
          begin
             booting      <= 1'b1;
             boot_RAMWE_b <= 1'b1;
-            boot_RAMA    <= BOOT_START_ADDR;
             if (SSEL_startmessage)
-              state <= `st_wait_for_byte;
+              state <= `st_wait_for_start_lo;
          end
+       `st_wait_for_start_lo:
+         if (byte_received)
+           begin
+              boot_RAMA[7:0] <= byte_data_received;
+              state <= `st_wait_for_start_mid;
+           end
+       `st_wait_for_start_mid:
+         if (byte_received)
+           begin
+              boot_RAMA[15:8] <= byte_data_received;
+              state <= `st_wait_for_start_hi;
+           end
+       `st_wait_for_start_hi:
+         if (byte_received)
+           begin
+              boot_RAMA[17:16] <= byte_data_received[1:0];
+              state <= `st_wait_for_end_lo;
+           end
+       `st_wait_for_end_lo:
+         if (byte_received)
+           begin
+              boot_ENDA[7:0] <= byte_data_received;
+              state <= `st_wait_for_end_mid;
+           end
+       `st_wait_for_end_mid:
+         if (byte_received)
+           begin
+              boot_ENDA[15:8] <= byte_data_received;
+              state <= `st_wait_for_end_hi;
+           end
+       `st_wait_for_end_hi:
+         if (byte_received)
+           begin
+              boot_ENDA[17:16] <= byte_data_received[1:0];
+              state <= `st_wait_for_byte;
+           end
        `st_wait_for_byte:
          if (byte_received)
            begin
@@ -143,7 +178,7 @@ module bootstrap
          end
        `st_write_4:
          begin
-            if (boot_RAMA == BOOT_END_ADDR)
+            if (boot_RAMA == boot_ENDA)
               begin
                  state <= `st_done;
               end

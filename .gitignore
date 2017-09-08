@@ -9,3 +9,8 @@ atom.txt
 # Simulation files
 dump.vcd
 a.out
+roms/bran/bran.lst
+roms/bran/bran.rom
+target/blackice/iceboot/output/
+target/blackice/iceboot/icebootatom.raw
+xilinx/
