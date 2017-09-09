@@ -58,11 +58,11 @@ module sid_voice
    reg             pulse                    = 1'b0;
    reg [11:0]      sawtooth                 = 0;
    reg [11:0]      triangle                 = 0;
-   wire [11:0]     noise                    = 0;
+   wire [11:0]     noise;
    reg [22:0]      LFSR                     = 0;
 
-   wire [15:0]     frequency                = 0;
-   wire [11:0]     pulsewidth               = 0;
+   wire [15:0]     frequency;
+   wire [11:0]     pulsewidth;
 
    // Envelope Generator
    `define st_idle          3'd0
@@ -146,7 +146,7 @@ module sid_voice
           accumulator <= 0;
         else
           // accumulate the new phase (i.o.w. increment env_counter with the freq. value)
-          accumulator <= accumulator + ("0" & frequency);
+          accumulator <= accumulator + {1'b0, frequency};
      end // always @ (posedge clk_1MHz)
 
    // Sawtooth waveform :
@@ -479,9 +479,9 @@ module sid_voice
             env_counter <= env_counter;
           else
             if (env_cnt_up == 1'b1)
-              env_counter <= env_counter + 1;
+              env_counter <= env_counter + 1'b1;
             else
-              env_counter <= env_counter - 1;
+              env_counter <= env_counter - 1'b1;
      end
 
    // Divider  :
@@ -520,7 +520,7 @@ module sid_voice
              else
                begin
                   env_count_hold_A  <= 1'b1;
-                  divider_counter   <= divider_counter - 1;
+                  divider_counter   <= divider_counter - 1'b1;
                end
           end
      end

@@ -218,9 +218,9 @@ module sid6581
 
    assign input_valid = (tick_q1 != tick_q2);
 
-   assign voice1_signed = {1'b0, voice_1} - 2048;
-   assign voice2_signed = {1'b0, voice_2} - 2048;
-   assign voice3_signed = {1'b0, voice_3} - 2048;
+   assign voice1_signed = {1'b0, voice_1} - 12'd2048;
+   assign voice2_signed = {1'b0, voice_2} - 12'd2048;
+   assign voice3_signed = {1'b0, voice_3} - 12'd2048;
 
    sid_filters filters
      (
