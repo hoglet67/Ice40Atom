@@ -223,10 +223,18 @@ module atom
    // LEDs
    // ===============================================================
 
-   wire led1 = pia_pc[3];  // blue    - indicates alt colour set active
-   wire led2 = !ss;        // green   - indicates SD card activity
-   wire led3 = lock;       // yellow  - indicates rept key pressed
-   wire led4 = reset;      // red     - indicates reset active
+   reg        led1;
+   reg        led2;
+   reg        led3;
+   reg        led4;
+
+   always @(posedge clk25)
+     begin
+        led1 <= pia_pc[3];  // blue    - indicates alt colour set active
+        led2 <= !ss;        // green   - indicates SD card activity
+        led3 <= lock;       // yellow  - indicates rept key pressed
+        led4 <= reset;      // red     - indicates reset active
+     end
 
    // ===============================================================
    // Cassette
@@ -509,7 +517,8 @@ module atom
 
    wire [7:0]  pl8_dout = 8'b0;
 
-   wire         rom_cs = (address[15:14] == 2'b11);
+   wire         rom_cs = (address[15:14] == 2'b11 | address[15:12] == 4'b1010);
+
    assign       pia_cs = (address[15: 4] == 12'hb00);
    wire         pl8_cs = (address[15: 4] == 12'hb40);
    wire         via_cs = (address[15: 4] == 12'hb80);
