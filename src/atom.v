@@ -516,7 +516,7 @@ module atom
    wire         spi_cs = (address[15: 4] == 12'hbc0);
    assign       sid_cs = (address[15: 8] ==  8'hbd);
    assign      a000_cs = (address[15:12] == 4'b1010);
-   wire         vid_cs = (address[15:12] == 4'b1000); //  | (address[15:11] == 5'b10010);
+   wire         vid_cs = (address[15:12] == 4'b1000) | (address[15:11] == 5'b10010);
    assign rom_latch_cs = (address        == 16'hbfff);
 
    assign      wemask = rom_cs;
@@ -591,6 +591,8 @@ module atom
 
    // Port A to CPU
    wire        we_a = vid_cs & !rnw;
+   reg [1:0]   rd_state;
+
    // Port B to VDG
    wire [12:0] vid_addr;
    wire [7:0]  vid_data;
@@ -604,12 +606,44 @@ module atom
       .we_a(we_a),
       .addr_a(address[12:0]),
       .din_a(cpu_dout),
-      .dout_a(vid_dout),
+      //.dout_a(vid_dout),
       // Port B
       .clk_b(clk_vga),
-      .addr_b(vid_addr[12:0]),
+      .addr_b(rd_state == 2'b10 ? address[12:0] : vid_addr[12:0]),
       .dout_b(vid_data)
       );
+
+   always @(posedge clk_vga, posedge reset)
+     begin
+        if (reset)
+          rd_state <= 2'b00;
+        else
+          case (rd_state)
+            2'b00:
+              begin
+                 if (cpu_clken)
+                   rd_state <= 2'b00;
+              end
+            2'b01:
+              begin
+                 if (vid_cs & rnw)
+                   rd_state <= 2'b10;
+                 else
+                   rd_state <= 2'b00;
+              end
+            2'b10:
+              begin
+                 rd_state <= 2'b11;
+              end
+            2'b11:
+              begin
+                 vid_dout <= vid_data;
+                 rd_state <= 2'b00;
+              end
+            default:
+              rd_state <= 2'b00;
+          endcase
+     end
 
    // ===============================================================
    // 6847 VDG
