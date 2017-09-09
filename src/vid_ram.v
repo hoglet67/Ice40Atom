@@ -13,22 +13,23 @@ module vid_ram (
 
    parameter MEM_INIT_FILE = "../mem/vid_ram.mem";
    
-   reg [7:0]                     ram [0:6143];
+   //reg [7:0]                     ram [0:6143];
+   reg [7:0]                     ram [0:4095];
 
-   initial
-     if (MEM_INIT_FILE != "")
-       $readmemh(MEM_INIT_FILE, ram);
+   //initial
+   //  if (MEM_INIT_FILE != "")
+   //    $readmemh(MEM_INIT_FILE, ram);
    
    always @(posedge clk_a)
      begin
         if (we_a)
-          ram[addr_a] <= din_a;
-        dout_a <= ram[addr_a];
+          ram[addr_a[11:0]] <= din_a;
+        dout_a <= ram[addr_a[11:0]];
      end
 
    always @(posedge clk_b)
      begin
-        dout_b <= ram[addr_b];
+        dout_b <= ram[addr_b[11:0]];
      end
    
 endmodule

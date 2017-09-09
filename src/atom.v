@@ -251,7 +251,7 @@ module atom
             cas_div <= cas_div + 1;
        end
 
-   assign sound = pia_pc[2];
+   assign sound = pia_pc[2] ^ sid_audio;
 
    // this is a direct translation of the logic in the atom
    // (two NAND gates and an inverter)
@@ -374,6 +374,33 @@ module atom
 `endif
 
    // ===============================================================
+   // SID
+   // ===============================================================
+
+   wire [7:0] sid_dout;
+   wire       sid_audio;
+   wire       sid_cs;
+
+   sid6581 sid
+     (
+      .clk_1MHz(!clkdiv[4]),
+      .clk32(clk25), // TODO: should be clk32
+      .clk_DAC(clk100),
+      .reset(reset),
+      .cs(cpu_clken),
+      .we(sid_cs & !rnw),
+
+      .addr(address[4:0]),
+      .di(cpu_dout),
+      .dout(sid_dout),
+
+      .pot_x(1'b1),
+      .pot_y(1'b1),
+      .audio_out(sid_audio),
+      .audio_data()
+   );
+
+   // ===============================================================
    // 8255 PIA at 0xB0xx
    // ===============================================================
 
@@ -487,8 +514,9 @@ module atom
    wire         pl8_cs = (address[15: 4] == 12'hb40);
    wire         via_cs = (address[15: 4] == 12'hb80);
    wire         spi_cs = (address[15: 4] == 12'hbc0);
+   assign       sid_cs = (address[15: 8] ==  8'hbd);
    assign      a000_cs = (address[15:12] == 4'b1010);
-   wire         vid_cs = (address[15:12] == 4'b1000) | (address[15:11] == 5'b10010);
+   wire         vid_cs = (address[15:12] == 4'b1000); //  | (address[15:11] == 5'b10010);
    assign rom_latch_cs = (address        == 16'hbfff);
 
    assign      wemask = rom_cs;
@@ -498,6 +526,7 @@ module atom
                     pl8_cs   ? pl8_dout  :
                     spi_cs   ? spi_dout  :
                     via_cs   ? via_dout  :
+                    sid_cs   ? sid_dout  :
               rom_latch_cs   ? rom_latch :
                                data_pins_in;
 
