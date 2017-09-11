@@ -402,8 +402,8 @@ module atom
       .di(cpu_dout),
       .dout(sid_dout),
 
-      .pot_x(1'b1),
-      .pot_y(1'b1),
+      .pot_x(1'b0),
+      .pot_y(1'b0),
       .audio_out(sid_audio),
       .audio_data()
    );
@@ -517,7 +517,7 @@ module atom
 
    wire [7:0]  pl8_dout = 8'b0;
 
-   wire         rom_cs = (address[15:14] == 2'b11 | address[15:12] == 4'b1010);
+   wire         rom_cs = (address[15:14] == 2'b11 | (address[15:12] == 4'b1010 & rom_latch[2:0] != 3'b111));
 
    assign       pia_cs = (address[15: 4] == 12'hb00);
    wire         pl8_cs = (address[15: 4] == 12'hb40);
