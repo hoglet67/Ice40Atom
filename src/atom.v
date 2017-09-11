@@ -259,7 +259,7 @@ module atom
             cas_div <= cas_div + 1;
        end
 
-   assign sound = pia_pc[2] ^ sid_audio;
+   assign sound = pia_pc[2] & sid_audio;
 
    // this is a direct translation of the logic in the atom
    // (two NAND gates and an inverter)
