@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p releases
+
 release=releases/ice40atom_$(date +"%Y%m%d_%H%M").zip
 
 echo building ${release}
