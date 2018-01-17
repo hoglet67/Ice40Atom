@@ -1,0 +1,55 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Tue Aug 29 11:12:41 2017
+[*]
+[dumpfile] "/home/dmb/atom/Ice40Atom/blackice/dump.vcd"
+[dumpfile_mtime] "Tue Aug 29 11:12:14 2017"
+[dumpfile_size] 364042139
+[savefile] "/home/dmb/atom/Ice40Atom/blackice/signals.gtkw"
+[timestart] 0
+[size] 1855 1176
+[pos] 65 0
+*-23.000000 1230015 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] atom_tb.
+[treeopen] atom_tb.DUT.
+[treeopen] atom_tb.DUT.CPU.
+[sst_width] 223
+[signals_width] 142
+[sst_expanded] 1
+[sst_vpaned_height] 355
+@28
+atom_tb.DUT.clk100
+atom_tb.DUT.clkpre[1:0]
+@22
+atom_tb.DUT.clkdiv[4:0]
+@28
+atom_tb.DUT.clk_cpu
+atom_tb.DUT.clk_spi
+atom_tb.DUT.clk_vga
+atom_tb.DUT.pwr_up_reset_n
+atom_tb.DUT.hard_reset_n
+atom_tb.DUT.reset
+atom_tb.arm_mosi
+atom_tb.arm_sclk
+atom_tb.arm_ss
+atom_tb.DUT.booting
+atom_tb.DUT.BS.state[2:0]
+atom_tb.DUT.BS.byte_received
+atom_tb.DUT.BS.bitcnt[2:0]
+@22
+atom_tb.DUT.address[15:0]
+@28
+atom_tb.DUT.rnw
+@22
+atom_tb.DUT.cpu_din[7:0]
+atom_tb.DUT.cpu_dout[7:0]
+@28
+atom_tb.DUT.clk_vga
+atom_tb.r_msb
+atom_tb.g_msb
+atom_tb.b_msb
+atom_tb.hsync
+atom_tb.vsync
+atom_tb.DUT.vid_cs
+[pattern_trace] 1
+[pattern_trace] 0

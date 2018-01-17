@@ -43,6 +43,15 @@ module atom
              output        RAMWE_b,
              output        RAMOE_b,
              output        RAMCS_b,
+`ifdef blackice2
+             output        RAMLB_b,
+             output        RAMUB_b,
+             // Global internal reset connected to RTS on ch340 and also PMOD[1]
+             input         greset,
+             // Input lines from STM32/Done can be used to signal to Ice40 logic
+             input         DONE, // could be used as interupt in post programming
+             input         DBG1, // Could be used to select coms via STM32 or RPi etc..
+`endif
              output [17:0] ADR,
              inout [7:0]   DAT,
              // Cassette / Sound
@@ -301,6 +310,11 @@ module atom
    wire        arm_mosi_int;
    wire        arm_miso_int;
    wire        arm_sclk_int;
+
+`ifdef blackice2
+   assign RAMLB_b = 1'b0;
+   assign RAMUB_b = 1'b0;
+`endif
 
    bootstrap BS
      (
