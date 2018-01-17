@@ -149,24 +149,19 @@ module atom
              via1_clken <= (clkdiv[2:0] == 0) & (clkdiv[4] == 0);
              via4_clken <= (clkdiv[0]   == 0) & (clkdiv[4] == 0);
           end
-        2'b10: // 4MHz
+        default: // 4MHz
           begin
              cpu_clken  <= (clkdiv[1:0] == 0) & (clkdiv[4] == 0);
              via1_clken <= (clkdiv[1:0] == 0) & (clkdiv[4] == 0);
-             via4_clken <=                      (clkdiv[4] == 0);
-          end
-        2'b11: // 8MHz
-          begin
-             cpu_clken  <= (clkdiv[0]   == 0) & (clkdiv[4] == 0);
-             via1_clken <= (clkdiv[0]   == 0) & (clkdiv[4] == 0);
              via4_clken <=                      (clkdiv[4] == 0);
           end
       endcase
       cpu_clken1 <= cpu_clken;
    end
 
-   // Use opposite edge, so wegate sits in middle of window @ 8MHz
-   always @(negedge clk25)
+   // Delay wegate_b by a whole cycle to provide lots of margin
+   // (4MHz: one cycle = 40ns setup time and two cycles = 80ns hold time)
+   always @(posedge clk25)
       wegate_b <= !cpu_clken1;
 
    // ===============================================================
