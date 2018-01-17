@@ -12,7 +12,7 @@
 #include "atom_roms.h"
 #define  ATOM_ROMS_START 0x00B000
 
-#define VER "0.35 Ice40Atom"
+#define VER "0.36 Ice40Atom"
 
 enum { FLASH_ICE40_START = 0x0801F000, FLASH_ICE40_END = 0x08040000 };
 enum { OK, TIMEOUT, ICE_ERROR };
@@ -542,7 +542,7 @@ setup(void)
 		memp = (uint8_t*)FLASH_ICE40_START;
 		crc_reset();
 		status_led_high();
-		gpio_low(ICE40_CRST);
+		// gpio_low(ICE40_CRST);
 		spi_reattach();
 		if (ice40_reset() != OK)
 			uart_puts("reset failed\n");
