@@ -15,3 +15,4 @@ target/blackice/iceboot/output/
 target/blackice/iceboot/icebootatom.raw
 xilinx/
 build/
+releases/
