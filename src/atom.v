@@ -91,7 +91,7 @@ module atom
    wire        wemask;
    reg [15:0]  address;
    reg [7:0]   cpu_dout;
-   wire [7:0]  vid_dout;
+   reg [7:0]   vid_dout;
    wire [7:0]  spi_dout;
    wire [7:0]  via_dout;
    wire        via_irq_n;
@@ -613,8 +613,9 @@ module atom
 
    // Port B to VDG
    wire [12:0] vid_addr;
-   wire [7:0]  vid_data;
-
+   reg  [7:0]  vid_data;
+   wire [7:0]  ram_data;
+   
    vid_ram
      #(.MEM_INIT_FILE (VID_RAM_INIT_FILE))
    VID_RAM
@@ -628,8 +629,22 @@ module atom
       // Port B
       .clk_b(clk_vga),
       .addr_b(rd_state == 2'b10 ? address[12:0] : vid_addr[12:0]),
-      .dout_b(vid_data)
+      .dout_b(ram_data)
       );
+
+   // The follow state machine works a bit like the Atom Noise Killer
+   // allowing a single video ram read port to be shared between the
+   // VDG and the CPU without any conflicts.
+   //
+   // The CPU is given priority.
+   //
+   // There are two holding registers for video RAM read data:
+   //    vid_data holds data from VDG read cycles
+   //    vid_dout holds data from CPU read cycles
+   //
+   // This sharing works because there is plenty of memory bandwidth
+   // and neither the VGD or the CPU require the read to happen
+   // immediately.
 
    always @(posedge clk_vga, posedge reset)
      begin
@@ -640,7 +655,8 @@ module atom
             2'b00:
               begin
                  if (cpu_clken)
-                   rd_state <= 2'b00;
+                   rd_state <= 2'b01;
+                 vid_data <= ram_data; // for the VDG
               end
             2'b01:
               begin
@@ -648,14 +664,16 @@ module atom
                    rd_state <= 2'b10;
                  else
                    rd_state <= 2'b00;
+                 vid_data <= ram_data; // for the VDG
               end
             2'b10:
               begin
                  rd_state <= 2'b11;
+                 vid_data <= ram_data; // for the VDG
               end
             2'b11:
               begin
-                 vid_dout <= vid_data;
+                 vid_dout <= ram_data; // for the CPU
                  rd_state <= 2'b00;
               end
             default:
