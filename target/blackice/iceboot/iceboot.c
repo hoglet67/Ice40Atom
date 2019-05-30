@@ -12,7 +12,7 @@
 #include "atom_roms.h"
 #define  ATOM_ROMS_START 0x00B000
 
-#define VER "0.37 Ice40Atom"
+#define VER "0.40 Ice40Atom"
 
 enum { FLASH_ICE40_START = 0x0801F000, FLASH_ICE40_END = 0x08040000 };
 enum { OK, TIMEOUT, ICE_ERROR };
@@ -522,9 +522,9 @@ setup(void)
 	uint8_t blver;
 	char blverstr[3];
  
-	// disable_mux_out();
-	select_rpi();
-	enable_mux_out();
+	disable_mux_out();
+	//select_rpi();
+	//enable_mux_out();
 	spi_detach();
 	status_led_low();
 	memp = (uint8_t*)FLASH_ICE40_START;
@@ -544,7 +544,6 @@ setup(void)
 		memp = (uint8_t*)FLASH_ICE40_START;
 		crc_reset();
 		status_led_high();
-		gpio_low(ICE40_CRST);
 		spi_reattach();
 		if (ice40_reset() != OK)
 			uart_puts("reset failed\n");
@@ -589,10 +588,9 @@ loop(void)
 		fifo_get(&in_fifo, &b);
 	} while (b != 0x7E);
 	status_led_high();
-	// disable_mux_out();
-	select_rpi();
-	enable_mux_out();
-	gpio_low(ICE40_CRST);
+	disable_mux_out();
+	//select_rpi();
+	//enable_mux_out();
 	spi_reattach();
 	err = ice40_reset();
 	if (err)
