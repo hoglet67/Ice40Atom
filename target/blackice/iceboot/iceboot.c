@@ -385,7 +385,7 @@ rbyte_mem_send(uint8_t *b, uint16_t *crc)
 		return OK;
 	}
 	*b = *memp++;
-	spi_write(b, 1);
+	spi_write1(*b);
 	crc_update(*b);
 	return OK;
 }
