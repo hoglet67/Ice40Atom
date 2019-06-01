@@ -17,7 +17,7 @@ do
     pushd ${board}
     ./clean.sh
     ./build.sh
-    mv atom.bin ../build/atom_${board}.bin
+    cp -a atom.bin ../build/atom_${board}.bin
     popd
 
     pushd target/blackice/iceboot
@@ -26,7 +26,7 @@ do
     cp output/iceboot.raw icebootatom_${board}.raw
     truncate -s 126976 icebootatom_${board}.raw
     cat ../../../build/atom_${board}.bin >> icebootatom_${board}.raw
-    mv icebootatom_${board}.raw ../../../build    
+    cp -a icebootatom_${board}.raw ../../../build    
     popd
 
 done
